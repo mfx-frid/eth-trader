@@ -1,0 +1,29 @@
+name: ETH Trader
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # runs every hour
+  workflow_dispatch:        # allows manual run from GitHub
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install anthropic yfinance cryptography pyjwt requests
+
+      - name: Run trader
+        env:
+          COINBASE_API_KEY:    ${{ secrets.COINBASE_API_KEY }}
+          COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
+          ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python coinbase_trader_v2.py
