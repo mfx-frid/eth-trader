@@ -5,6 +5,9 @@ on:
     - cron: '0 * * * *'  # runs every hour
   workflow_dispatch:        # allows manual run from GitHub
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   trade:
     runs-on: ubuntu-latest
