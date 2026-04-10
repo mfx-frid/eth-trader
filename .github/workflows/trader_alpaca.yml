@@ -1,0 +1,42 @@
+name: Stock Trader
+
+on:
+  schedule:
+    - cron: '30 * * * *'  # runs every hour at :30
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install anthropic yfinance requests
+
+      - name: Run stock trader
+        env:
+          ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python alpaca_trader.py
+
+      - name: Save CSV log to repository
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add alpaca_trade_log.csv
+          git diff --staged --quiet || git commit -m "Alpaca log $(date -u '+%Y-%m-%d %H:%M')"
+          git push
