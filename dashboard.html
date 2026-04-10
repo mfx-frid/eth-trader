@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Trading Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 500;
+    color: #f8fafc;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 28px;
+  }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #94a3b8;
+    margin: 28px 0 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .card {
+    background: #1e2330;
+    border: 0.5px solid #2d3748;
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .card-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 6px;
+  }
+
+  .card-value {
+    font-size: 22px;
+    font-weight: 500;
+    color: #f8fafc;
+  }
+
+  .card-sub {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 4px;
+  }
+
+  .positive { color: #34d399; }
+  .negative { color: #f87171; }
+  .neutral  { color: #94a3b8; }
+
+  .chart-card {
+    background: #1e2330;
+    border: 0.5px solid #2d3748;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .chart-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #94a3b8;
+    margin-bottom: 16px;
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 200px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .signal-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 0.5px solid #2d3748;
+    font-size: 13px;
+  }
+
+  .signal-row:last-child { border-bottom: none; }
+
+  .badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    min-width: 48px;
+    text-align: center;
+  }
+
+  .badge-buy  { background: #064e3b; color: #34d399; }
+  .badge-sell { background: #450a0a; color: #f87171; }
+  .badge-hold { background: #1c1917; color: #a8a29e; }
+
+  .signal-ticker { font-weight: 500; min-width: 48px; color: #f8fafc; }
+  .signal-price  { color: #94a3b8; min-width: 80px; }
+  .signal-conf   { color: #64748b; font-size: 12px; }
+  .signal-time   { color: #475569; font-size: 11px; margin-left: auto; }
+
+  .reasoning-text {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .tab {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 0.5px solid #2d3748;
+    background: transparent;
+    color: #64748b;
+    transition: all 0.15s;
+  }
+
+  .tab.active {
+    background: #2d3748;
+    color: #f8fafc;
+    border-color: #4a5568;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: #475569;
+    font-size: 14px;
+  }
+
+  .error-msg {
+    background: #450a0a;
+    border: 0.5px solid #7f1d1d;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #fca5a5;
+    margin-bottom: 16px;
+  }
+
+  .rsi-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0;
+  }
+
+  .rsi-label { font-size: 12px; color: #94a3b8; min-width: 44px; }
+
+  .rsi-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: #2d3748;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .rsi-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s;
+  }
+
+  .rsi-val { font-size: 12px; color: #64748b; min-width: 32px; text-align: right; }
+
+  @media (max-width: 600px) {
+    body { padding: 16px; }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Claude Trading Dashboard</h1>
+<p class="subtitle" id="last-updated">Loading...</p>
+
+<div id="error-area"></div>
+
+<!-- Summary cards -->
+<div class="section-title">Portfolio overview</div>
+<div class="cards" id="summary-cards">
+  <div class="loading">Fetching data...</div>
+</div>
+
+<!-- Tabs -->
+<div class="section-title">Analysis</div>
+<div class="tabs">
+  <button class="tab active" onclick="showTab('eth')">ETH-EUR</button>
+  <button class="tab" onclick="showTab('stocks')">Stocks</button>
+</div>
+
+<!-- ETH section -->
+<div id="tab-eth">
+  <div class="chart-card">
+    <div class="chart-title">ETH-EUR price (14 days)</div>
+    <div class="chart-wrap"><canvas id="ethPriceChart"></canvas></div>
+  </div>
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-title">RSI-14 history</div>
+      <div class="chart-wrap"><canvas id="ethRsiChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Signal history</div>
+      <div id="eth-signals"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Stocks section -->
+<div id="tab-stocks" style="display:none">
+  <div class="chart-card">
+    <div class="chart-title">RSI by ticker</div>
+    <div id="stock-rsi-bars"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Latest signals</div>
+    <div id="stock-signals"><div class="loading">Loading...</div></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Signal distribution</div>
+    <div class="chart-wrap" style="height:160px"><canvas id="stockSignalChart"></canvas></div>
+  </div>
+</div>
+
+<script>
+const GITHUB_USER = "mfx-frid";
+const REPO        = "eth-trader";
+const BRANCH      = "main";
+
+function csvUrl(file) {
+  return `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO}/${BRANCH}/${file}?t=${Date.now()}`;
+}
+
+// ── CSV parser ────────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split("\n").filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map(h => h.trim().replace(/"/g, ""));
+  return lines.slice(1).map(line => {
+    const vals = [];
+    let cur = "", inQ = false;
+    for (const ch of line) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === "," && !inQ) { vals.push(cur.trim()); cur = ""; }
+      else { cur += ch; }
+    }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (vals[i] || "").replace(/"/g, ""));
+    return obj;
+  });
+}
+
+// ── Fetch CSV from GitHub ─────────────────────────────────────────────────────
+async function fetchCSV(file) {
+  try {
+    const resp = await fetch(csvUrl(file));
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return parseCSV(await resp.text());
+  } catch (e) {
+    return null;
+  }
+}
+
+// ── Chart defaults ────────────────────────────────────────────────────────────
+Chart.defaults.color = "#64748b";
+Chart.defaults.borderColor = "#2d3748";
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+Chart.defaults.font.size = 11;
+
+function lineChart(id, labels, datasets, yLabel = "") {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  return new Chart(ctx, {
+    type: "line",
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: datasets.length > 1 } },
+      scales: {
+        x: { grid: { color: "#1e2330" }, ticks: { maxTicksLimit: 6 } },
+        y: { grid: { color: "#2d3748" }, title: { display: !!yLabel, text: yLabel } }
+      },
+      elements: { point: { radius: 2 }, line: { tension: 0.3 } }
+    }
+  });
+}
+
+// ── Signal badge ──────────────────────────────────────────────────────────────
+function badge(action) {
+  const cls = { BUY: "badge-buy", SELL: "badge-sell", HOLD: "badge-hold" }[action] || "badge-hold";
+  return `<span class="badge ${cls}">${action}</span>`;
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function showTab(name) {
+  document.getElementById("tab-eth").style.display    = name === "eth"    ? "" : "none";
+  document.getElementById("tab-stocks").style.display = name === "stocks" ? "" : "none";
+  document.querySelectorAll(".tab").forEach((t, i) => {
+    t.classList.toggle("active", (i === 0 && name === "eth") || (i === 1 && name === "stocks"));
+  });
+}
+
+// ── RSI colour ────────────────────────────────────────────────────────────────
+function rsiColor(v) {
+  if (v >= 70) return "#f87171";
+  if (v <= 30) return "#34d399";
+  return "#60a5fa";
+}
+
+// ── Summary cards ─────────────────────────────────────────────────────────────
+function renderSummary(ethRows, stockRows) {
+  const latestEth   = ethRows[ethRows.length - 1] || {};
+  const latestStock = stockRows[stockRows.length - 1] || {};
+
+  // Count signals
+  const ethBuys  = ethRows.filter(r => r.action === "BUY").length;
+  const ethHolds = ethRows.filter(r => r.action === "HOLD").length;
+  const ethSells = ethRows.filter(r => r.action === "SELL").length;
+
+  const portVal  = parseFloat(latestStock.portfolio_value || 100000);
+  const pnl      = portVal - 100000;
+  const pnlClass = pnl >= 0 ? "positive" : "negative";
+  const pnlSign  = pnl >= 0 ? "+" : "";
+
+  document.getElementById("summary-cards").innerHTML = `
+    <div class="card">
+      <div class="card-label">ETH-EUR price</div>
+      <div class="card-value">€${parseFloat(latestEth.price || 0).toFixed(2)}</div>
+      <div class="card-sub ${parseFloat(latestEth.change_7d_pct) >= 0 ? 'positive' : 'negative'}">
+        ${parseFloat(latestEth.change_7d_pct || 0) >= 0 ? "+" : ""}${parseFloat(latestEth.change_7d_pct || 0).toFixed(1)}% / 7d
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">ETH RSI-14</div>
+      <div class="card-value" style="color:${rsiColor(parseFloat(latestEth.rsi_14 || 50))}">
+        ${parseFloat(latestEth.rsi_14 || 0).toFixed(1)}
+      </div>
+      <div class="card-sub">${parseFloat(latestEth.rsi_14 || 50) >= 70 ? "Overbought" : parseFloat(latestEth.rsi_14 || 50) <= 30 ? "Oversold" : "Neutral"}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Paper portfolio</div>
+      <div class="card-value">$${portVal.toLocaleString()}</div>
+      <div class="card-sub ${pnlClass}">${pnlSign}$${pnl.toFixed(2)} P&amp;L</div>
+    </div>
+    <div class="card">
+      <div class="card-label">ETH signals (all time)</div>
+      <div class="card-value">${ethRows.length}</div>
+      <div class="card-sub">
+        <span class="positive">${ethBuys}B</span> &nbsp;
+        <span class="neutral">${ethHolds}H</span> &nbsp;
+        <span class="negative">${ethSells}S</span>
+      </div>
+    </div>
+  `;
+}
+
+// ── ETH charts ────────────────────────────────────────────────────────────────
+function renderEth(rows) {
+  const last24 = rows.slice(-24);
+  const labels  = last24.map(r => r.timestamp ? r.timestamp.slice(11, 16) : "");
+  const prices  = last24.map(r => parseFloat(r.price || 0));
+  const rsis    = last24.map(r => parseFloat(r.rsi_14 || 0));
+  const sma7s   = last24.map(r => parseFloat(r.sma_7 || 0));
+
+  lineChart("ethPriceChart", labels, [
+    { label: "Price", data: prices, borderColor: "#60a5fa", backgroundColor: "rgba(96,165,250,0.08)", fill: true, borderWidth: 1.5 },
+    { label: "SMA-7", data: sma7s,  borderColor: "#f59e0b", borderDash: [4,4], borderWidth: 1, pointRadius: 0 },
+  ]);
+
+  lineChart("ethRsiChart", labels, [
+    { label: "RSI-14", data: rsis, borderColor: "#a78bfa", borderWidth: 1.5,
+      segment: { borderColor: ctx => rsiColor(ctx.p1.parsed.y) } }
+  ]);
+
+  // Draw overbought/oversold lines on RSI chart
+  const rsiChart = Chart.getChart("ethRsiChart");
+  if (rsiChart) {
+    rsiChart.options.plugins.annotation = {};
+    rsiChart.options.scales.y.min = 0;
+    rsiChart.options.scales.y.max = 100;
+    rsiChart.update();
+  }
+
+  // Signal list
+  const last8 = rows.slice(-8).reverse();
+  document.getElementById("eth-signals").innerHTML = last8.map(r => `
+    <div class="signal-row">
+      ${badge(r.action)}
+      <span class="signal-price">€${parseFloat(r.price || 0).toFixed(2)}</span>
+      <span class="signal-conf">${r.confidence}/10</span>
+      <span class="signal-time">${(r.timestamp || "").slice(5, 16)}</span>
+    </div>
+    <div class="reasoning-text">${r.reasoning ? r.reasoning.slice(0, 100) + (r.reasoning.length > 100 ? "…" : "") : ""}</div>
+  `).join("");
+}
+
+// ── Stock charts ──────────────────────────────────────────────────────────────
+function renderStocks(rows) {
+  // Get latest row per ticker
+  const tickers = [...new Set(rows.map(r => r.ticker))];
+  const latest  = {};
+  rows.forEach(r => { latest[r.ticker] = r; });
+
+  // RSI bars
+  document.getElementById("stock-rsi-bars").innerHTML = tickers.map(t => {
+    const r   = latest[t] || {};
+    const rsi = parseFloat(r.rsi_14 || 50);
+    return `
+      <div class="rsi-bar-wrap">
+        <span class="rsi-label">${t}</span>
+        <div class="rsi-bar-bg">
+          <div class="rsi-bar-fill" style="width:${rsi}%;background:${rsiColor(rsi)}"></div>
+        </div>
+        <span class="rsi-val">${rsi.toFixed(1)}</span>
+      </div>`;
+  }).join("");
+
+  // Latest signals per ticker
+  document.getElementById("stock-signals").innerHTML = tickers.map(t => {
+    const r = latest[t] || {};
+    return `
+      <div class="signal-row">
+        ${badge(r.action || "HOLD")}
+        <span class="signal-ticker">${t}</span>
+        <span class="signal-price">$${parseFloat(r.price || 0).toFixed(2)}</span>
+        <span class="signal-conf">${r.confidence || 0}/10</span>
+        <span class="signal-time">${(r.timestamp || "").slice(5, 16)}</span>
+      </div>
+      <div class="reasoning-text">${r.reasoning ? r.reasoning.slice(0, 120) + (r.reasoning.length > 120 ? "…" : "") : ""}</div>
+    `;
+  }).join("");
+
+  // Signal distribution donut
+  const counts = { BUY: 0, HOLD: 0, SELL: 0 };
+  rows.forEach(r => { if (counts[r.action] !== undefined) counts[r.action]++; });
+  const ctx = document.getElementById("stockSignalChart");
+  if (ctx) {
+    new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["BUY", "HOLD", "SELL"],
+        datasets: [{
+          data: [counts.BUY, counts.HOLD, counts.SELL],
+          backgroundColor: ["#064e3b", "#1c1917", "#450a0a"],
+          borderColor:     ["#34d399", "#a8a29e", "#f87171"],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: "right" } },
+        cutout: "65%"
+      }
+    });
+  }
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+async function init() {
+  document.getElementById("last-updated").textContent = "Loading data from GitHub...";
+
+  const [ethRows, stockRows] = await Promise.all([
+    fetchCSV("coinbase_trade_log.csv"),
+    fetchCSV("alpaca_trade_log.csv"),
+  ]);
+
+  const errArea = document.getElementById("error-area");
+
+  if (!ethRows || ethRows.length === 0) {
+    errArea.innerHTML += `<div class="error-msg">⚠ Could not load coinbase_trade_log.csv — make sure GitHub Pages is enabled and the file exists.</div>`;
+  }
+  if (!stockRows || stockRows.length === 0) {
+    errArea.innerHTML += `<div class="error-msg">⚠ Could not load alpaca_trade_log.csv — make sure the file exists in your repository.</div>`;
+  }
+
+  const eth   = ethRows   || [];
+  const stock = stockRows || [];
+
+  renderSummary(eth, stock);
+  if (eth.length)   renderEth(eth);
+  if (stock.length) renderStocks(stock);
+
+  const now = new Date().toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+  document.getElementById("last-updated").textContent = `Last refreshed: ${now} — refreshes on page reload`;
+}
+
+init();
+</script>
+</body>
+</html>
