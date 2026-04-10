@@ -31,7 +31,7 @@ jobs:
           COINBASE_API_KEY:    ${{ secrets.COINBASE_API_KEY }}
           COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
           ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python coinbase_trader_v2.py
+        run: python coinbase_trader_v3.py
 
       - name: Save CSV log to repository
         run: |
