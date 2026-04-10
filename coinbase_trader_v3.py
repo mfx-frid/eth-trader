@@ -19,7 +19,8 @@ import datetime
 import requests
 import yfinance as yf
 import anthropic
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
 import jwt
 
