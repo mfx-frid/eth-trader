@@ -31,7 +31,7 @@ ALPACA_API_SECRET = os.environ.get("ALPACA_API_SECRET", "")
 ANTHROPIC_API_KEY   = os.environ.get("ANTHROPIC_API_KEY",   "")
 
 # Stocks to analyse each run — add or remove as you like
-TICKERS = ["NVDA", "AAPL", "TSLA"]
+TICKERS = ["NVDA", "AAPL", "TSLA", "META", "AMD", "COIN"]
 
 PAPER_BASE_URL  = "https://paper-api.alpaca.markets"
 DATA_BASE_URL   = "https://data.alpaca.markets"
