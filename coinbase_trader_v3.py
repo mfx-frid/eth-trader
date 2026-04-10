@@ -25,11 +25,10 @@ import jwt
 
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
 
-COINBASE_API_KEY    = os.environ.get("COINBASE_API_KEY",    "organizations/57955423-88eb-47b1-9c80-2f92067a236d/apiKeys/d4ce5a8f-8aa4-47f7-b567-7caedf487b3b")
-print(f"DEBUG Coinbase key starts with: {COINBASE_API_KEY[:30]}")
-COINBASE_API_SECRET = "-----BEGIN EC PRIVATE KEY-----\nMHcCAQEEIPUoA+1p6gVdymIS4J/IUrrEu0QDIt1kP9AsW4yPdXOFoAoGCCqGSM49\nAwEHoUQDQgAEcEcKk+1iwLi4P8K3pLNvC91RjdJHQOPm7/taD70ATQWXM3Mbrqn+\nusXbE9q3xjRkcD3LbrqQMC+UkLCHLJat/w==\n-----END EC PRIVATE KEY-----\n"
-ANTHROPIC_API_KEY   = "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"
-print(f"DEBUG Anthropic key starts with: {ANTHROPIC_API_KEY[:25]}")
+COINBASE_API_KEY    = os.environ.get("COINBASE_API_KEY",    "")
+COINBASE_API_SECRET = os.environ.get("COINBASE_API_SECRET", "")
+ANTHROPIC_API_KEY   = os.environ.get("ANTHROPIC_API_KEY",   "")
+
 # Crypto pairs to analyse — all must be available on Coinbase Advanced Trade
 TICKERS = [
     "ETH-EUR",
