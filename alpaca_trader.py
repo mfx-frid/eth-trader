@@ -38,8 +38,8 @@ DATA_BASE_URL   = "https://data.alpaca.markets"
 LOG_FILE        = "alpaca_trade_log.csv"
 
 # Risk controls — adjust these to your comfort level
-MAX_POSITION_USD = 500.0    # Max USD per single trade
-MAX_OPEN_TRADES  = 3        # Max simultaneous open positions
+MAX_POSITION_USD = 2000.0    # Max USD per single trade
+MAX_OPEN_TRADES  = 5        # Max simultaneous open positions
 
 # ── ALPACA API ────────────────────────────────────────────────────────────────
 
