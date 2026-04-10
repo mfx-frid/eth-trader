@@ -2,8 +2,8 @@ name: ETH Trader
 
 on:
   schedule:
-    - cron: '0 * * * *'  # runs every hour
-  workflow_dispatch:        # allows manual run from GitHub
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -11,6 +11,8 @@ env:
 jobs:
   trade:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -30,3 +32,11 @@ jobs:
           COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
           ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
         run: python coinbase_trader_v2.py
+
+      - name: Save CSV log to repository
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add coinbase_trade_log.csv
+          git diff --staged --quiet || git commit -m "Log update $(date -u '+%Y-%m-%d %H:%M')"
+          git push
