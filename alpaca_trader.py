@@ -26,10 +26,9 @@ import anthropic
 
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
 
-ALPACA_API_KEY    = os.environ.get("ALPACA_API_KEY",    "PKRFUIRF7EWZU7ODQ33BHEVOPB")
-ALPACA_API_SECRET = os.environ.get("ALPACA_API_SECRET", "Hft6vJFZ3mpvTVZurQeJS1okoSatkWT832K8DGP1ErAC")
-ANTHROPIC_API_KEY   = os.environ.get("ANTHROPIC_API_KEY",   "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")
-ANTHROPIC_API_KEY="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"
+ALPACA_API_KEY    = os.environ.get("ALPACA_API_KEY",    "")
+ALPACA_API_SECRET = os.environ.get("ALPACA_API_SECRET", "")
+ANTHROPIC_API_KEY   = os.environ.get("ANTHROPIC_API_KEY",   "")
 
 # Stocks to analyse each run — add or remove as you like
 TICKERS = ["NVDA", "AAPL", "TSLA"]
