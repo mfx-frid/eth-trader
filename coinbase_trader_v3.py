@@ -1,14 +1,10 @@
 """
 Coinbase Advanced Trade — AI Crypto Advisor v3
 ===============================================
-Multi-ticker version — analyses multiple crypto pairs in one run.
-Uses JWT authentication (EC private key format).
+Multi-ticker version built directly on top of working v2 auth code.
 
 Requirements:
   pip install requests anthropic yfinance cryptography pyjwt
-
-Configuration:
-  Fill in the three variables in the CONFIGURATION section below.
 """
 
 import os
@@ -19,6 +15,7 @@ import datetime
 import requests
 import yfinance as yf
 import anthropic
+
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
@@ -30,7 +27,6 @@ COINBASE_API_KEY    = os.environ.get("COINBASE_API_KEY",    "")
 COINBASE_API_SECRET = os.environ.get("COINBASE_API_SECRET", "")
 ANTHROPIC_API_KEY   = os.environ.get("ANTHROPIC_API_KEY",   "")
 
-# Crypto pairs to analyse — all must be available on Coinbase Advanced Trade
 TICKERS = [
     "ETH-EUR",
     "BTC-EUR",
@@ -40,9 +36,8 @@ TICKERS = [
     "DOGE-EUR",
 ]
 
-# Yahoo Finance mapping for news headlines
-YAHOO_NEWS_MAP = {
-    "ETH-EUR":  "ETH-EUR",
+YAHOO_MAP = {
+    "ETH-EUR":  "ETH-USD",
     "BTC-EUR":  "BTC-USD",
     "XRP-EUR":  "XRP-USD",
     "SOL-EUR":  "SOL-USD",
@@ -50,14 +45,14 @@ YAHOO_NEWS_MAP = {
     "DOGE-EUR": "DOGE-USD",
 }
 
-LOG_FILE        = "coinbase_trade_log.csv"
-PAPER_BALANCE   = 1000.0   # Virtual EUR balance
-MAX_POSITION    = 0.15     # Max 15% of balance per trade
-MIN_CONFIDENCE  = 7        # Minimum confidence to BUY
+LOG_FILE       = "coinbase_trade_log.csv"
+PAPER_BALANCE  = 1000.0
+MAX_POSITION   = 0.15
+MIN_CONFIDENCE = 7
 
-COINBASE_BASE   = "https://api.coinbase.com"
+COINBASE_BASE  = "https://api.coinbase.com"
 
-# ── COINBASE JWT AUTH ─────────────────────────────────────────────────────────
+# ── COINBASE JWT AUTH — identical to working v2 ───────────────────────────────
 
 def _build_jwt(method: str, path: str) -> str:
     private_key = serialization.load_pem_private_key(
@@ -72,12 +67,13 @@ def _build_jwt(method: str, path: str) -> str:
         "exp": int(time.time()) + 120,
         "uri": f"{method.upper()} api.coinbase.com{path}",
     }
-    return jwt.encode(
+    token = jwt.encode(
         payload,
         private_key,
         algorithm="ES256",
         headers={"kid": COINBASE_API_KEY, "nonce": str(int(time.time() * 1000))},
     )
+    return token
 
 
 def _cb_get(path: str) -> dict:
@@ -93,7 +89,7 @@ def _cb_get(path: str) -> dict:
 
 # ── MARKET DATA ───────────────────────────────────────────────────────────────
 
-def fetch_candles(product_id: str, limit: int = 14) -> list[dict]:
+def fetch_coinbase_candles(product_id: str, limit: int = 14) -> list[dict]:
     end   = int(time.time())
     start = end - 86400 * limit
     path  = (f"/api/v3/brokerage/products/{product_id}/candles"
@@ -104,9 +100,9 @@ def fetch_candles(product_id: str, limit: int = 14) -> list[dict]:
     return candles
 
 
-def fetch_live_price(product_id: str) -> dict:
-    path = f"/api/v3/brokerage/best_bid_ask?product_ids={product_id}"
-    data = _cb_get(path)
+def fetch_coinbase_price(product_id: str) -> dict:
+    path  = f"/api/v3/brokerage/best_bid_ask?product_ids={product_id}"
+    data  = _cb_get(path)
     books = data.get("pricebooks", [{}])
     book  = books[0] if books else {}
     bids  = book.get("bids", [{}])
@@ -126,7 +122,6 @@ def build_market_data(product_id: str,
         datetime.datetime.fromtimestamp(int(c["start"])).strftime("%Y-%m-%d")
         for c in candles
     ]
-
     sma7  = round(sum(closes[-7:])  / min(7,  len(closes)), 4)
     sma14 = round(sum(closes[-14:]) / min(14, len(closes)), 4)
 
@@ -172,10 +167,9 @@ def fetch_news(yahoo_ticker: str, max_items: int = 5) -> list[str]:
 
 # ── PAPER PORTFOLIO ───────────────────────────────────────────────────────────
 
-# Persists across tickers within one run
 _portfolio = {
     "eur_balance": PAPER_BALANCE,
-    "holdings":    {},   # { "ETH-EUR": {"qty": 0.5, "avg_buy": 1800.0} }
+    "holdings":    {},
 }
 
 
@@ -188,32 +182,31 @@ def simulate_trade(action: str, confidence: int,
 
     if action == "BUY":
         if confidence < MIN_CONFIDENCE:
-            trade["note"] = f"Confidence {confidence}/10 below threshold — skipped"
+            trade["note"] = f"Confidence {confidence}/10 below threshold"
             return trade
         if p["eur_balance"] < 10:
             trade["note"] = "Insufficient paper balance"
             return trade
-        if product in p["holdings"] and p["holdings"][product]["qty"] > 0:
+        held = p["holdings"].get(product, {})
+        if held.get("qty", 0) > 0:
             trade["note"] = "Already holding — skipped"
             return trade
-
         max_eur = p["eur_balance"] * MAX_POSITION * (confidence / 10)
         qty     = round(max_eur / price, 6)
         cost    = round(qty * price, 2)
-
         p["eur_balance"] -= cost
         p["holdings"][product] = {"qty": qty, "avg_buy": price}
         trade.update({"qty": qty, "eur_value": cost,
                       "note": "Paper buy executed ✅"})
 
     elif action == "SELL":
-        holding = p["holdings"].get(product)
-        if not holding or holding["qty"] <= 0:
+        held = p["holdings"].get(product, {})
+        if not held or held.get("qty", 0) <= 0:
             trade["note"] = "No position to sell — skipped"
             return trade
-        qty      = holding["qty"]
+        qty      = held["qty"]
         proceeds = round(qty * price, 2)
-        pnl      = round(proceeds - (holding["avg_buy"] * qty), 2)
+        pnl      = round(proceeds - (held["avg_buy"] * qty), 2)
         p["eur_balance"] += proceeds
         p["holdings"][product] = {"qty": 0.0, "avg_buy": 0.0}
         trade.update({"qty": qty, "eur_value": proceeds,
@@ -231,16 +224,13 @@ def build_prompt(market: dict, headlines: list[str]) -> str:
         f"  {date}: €{price}" for date, price in market["price_history"]
     )
     news_block = "\n".join(f"  - {h}" for h in headlines)
-    holding    = _portfolio["holdings"].get(market["product"])
+    held       = _portfolio["holdings"].get(market["product"], {})
     pos_info   = (
-        f"Currently holding {holding['qty']} units "
-        f"(avg buy: €{holding['avg_buy']:.4f})"
-        if holding and holding["qty"] > 0
-        else "No current position."
+        f"Holding {held['qty']} units (avg buy: €{held['avg_buy']:.4f})"
+        if held.get("qty", 0) > 0 else "No current position."
     )
-
     return f"""You are a cautious quantitative crypto trading analyst.
-Analyse the following data and provide a clear trading recommendation.
+Analyse the following data and provide a trading recommendation.
 
 ## Asset: {market['product']}
 
@@ -262,8 +252,8 @@ Analyse the following data and provide a clear trading recommendation.
 ### Current position
 {pos_info}
 
-### Paper portfolio
-- EUR balance: €{round(_portfolio['eur_balance'], 2)}
+### Paper EUR balance
+€{round(_portfolio['eur_balance'], 2)}
 
 ### Recent news
 {news_block}
@@ -281,11 +271,7 @@ Respond with JSON ONLY — no markdown fences:
   "time_horizon": "short-term (days)" | "medium-term (weeks)" | "long-term (months)"
 }}
 
-Rules:
-- BUY only if confidence >= {MIN_CONFIDENCE}
-- SELL only if currently holding
-- When in doubt, HOLD
-- This is paper trading"""
+Rules: BUY only if confidence >= {MIN_CONFIDENCE}. SELL only if holding. When in doubt HOLD."""
 
 
 def call_claude(prompt: str) -> dict:
@@ -350,13 +336,9 @@ def print_ticker_report(market: dict, rec: dict, trade: dict) -> None:
     action = rec["action"]
     icon   = {"BUY": "🟢", "SELL": "🔴", "HOLD": "🟡"}.get(action, "⚪")
     sep    = "─" * 62
-
     print(f"\n{sep}")
     print(f"  {market['product']}  •  €{market['current_price']}  "
-          f"({market['change_7d_pct']:+.1f}% / 7d)  "
-          f"|  RSI: {market['rsi_14']}")
-    print(f"  Bid: €{market['bid']}  |  Ask: €{market['ask']}  "
-          f"|  SMA7: €{market['sma_7']}  |  SMA14: €{market['sma_14']}")
+          f"({market['change_7d_pct']:+.1f}% / 7d)  |  RSI: {market['rsi_14']}")
     print(f"  {icon}  {action}  (Confidence: {rec['confidence']}/10)"
           f"  —  {rec.get('time_horizon', '')}")
     print(f"  {rec.get('reasoning', '')}")
@@ -367,71 +349,55 @@ def print_ticker_report(market: dict, rec: dict, trade: dict) -> None:
     for risk in rec.get("key_risks", []):
         print(f"  ⚠  {risk}")
     print(f"  📋  {trade['note']}")
-    if trade.get("qty") and trade["qty"] > 0:
-        side = "Buy" if action == "BUY" else "Sell"
-        print(f"      {side} {trade['qty']} units @ €{trade['price']}"
-              f" = €{trade['eur_value']}")
-
-
-def print_portfolio_summary() -> None:
-    sep = "═" * 62
-    p   = _portfolio
-    print(f"\n{sep}")
-    print(f"  💼  Paper portfolio summary")
-    print(f"{sep}")
-    print(f"  EUR balance: €{round(p['eur_balance'], 2)}")
-    for product, h in p["holdings"].items():
-        if h["qty"] > 0:
-            print(f"  {product}: {h['qty']} units  "
-                  f"(avg buy: €{h['avg_buy']:.4f})")
-    if not any(h["qty"] > 0 for h in p["holdings"].values()):
-        print(f"  No open positions")
-    print(f"{sep}")
 
 
 # ── MAIN ──────────────────────────────────────────────────────────────────────
 
 def main():
     if not COINBASE_API_KEY or not ANTHROPIC_API_KEY:
-        print("ERROR: Fill in your API keys in the CONFIGURATION section.")
+        print("ERROR: API keys not set.")
         return
 
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     print(f"\n{'═'*62}")
-    print(f"  Claude AI Crypto Advisor v3 — Coinbase  •  {now}")
+    print(f"  Claude AI Crypto Advisor v3  •  {now}")
     print(f"  Tracking: {', '.join(TICKERS)}")
     print(f"{'═'*62}")
 
     for product_id in TICKERS:
         print(f"\n  Fetching {product_id}...")
         try:
-            candles    = fetch_candles(product_id, limit=14)
-            live       = fetch_live_price(product_id)
+            candles    = fetch_coinbase_candles(product_id, limit=14)
+            live       = fetch_coinbase_price(product_id)
             market     = build_market_data(product_id, candles, live)
-            yahoo_tick = YAHOO_NEWS_MAP.get(product_id, product_id)
-            headlines  = fetch_news(yahoo_tick)
+            headlines  = fetch_news(YAHOO_MAP.get(product_id, product_id))
 
             print(f"  Calling Claude for {product_id}...")
-            prompt = build_prompt(market, headlines)
-            rec    = call_claude(prompt)
-            trade  = simulate_trade(
+            rec   = call_claude(build_prompt(market, headlines))
+            trade = simulate_trade(
                 rec["action"], rec["confidence"],
                 product_id, market["current_price"]
             )
-
             print_ticker_report(market, rec, trade)
             log_to_csv(market, rec, trade)
 
-        except requests.HTTPError as e:
-            print(f"  Coinbase API error for {product_id}: {e}")
-            continue
         except Exception as e:
             print(f"  Error processing {product_id}: {e}")
             continue
 
-    print_portfolio_summary()
-    print(f"\n  📁  Logged to {LOG_FILE}")
-    print(f"  ⚠  Paper trading only. Not financial advice.\n")
+    # Portfolio summary
+    p = _portfolio
+    print(f"\n{'═'*62}")
+    print(f"  💼  Paper portfolio")
+    print(f"  EUR balance: €{round(p['eur_balance'], 2)}")
+    for prod, h in p["holdings"].items():
+        if h.get("qty", 0) > 0:
+            print(f"  {prod}: {h['qty']} units (avg: €{h['avg_buy']:.4f})")
+    if not any(h.get("qty", 0) > 0 for h in p["holdings"].values()):
+        print(f"  No open positions")
+    print(f"  📁  Logged to {LOG_FILE}")
+    print(f"  ⚠  Paper trading only. Not financial advice.")
+    print(f"{'═'*62}\n")
 
 
 if __name__ == "__main__":
