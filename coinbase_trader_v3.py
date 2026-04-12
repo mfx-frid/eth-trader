@@ -1,7 +1,7 @@
 """
 Coinbase Advanced Trade — AI Crypto Advisor v3
 ===============================================
-Multi-ticker version built directly on top of working v2 auth code.
+Multi-ticker with persistent paper portfolio state.
 
 Requirements:
   pip install requests anthropic yfinance cryptography pyjwt
@@ -46,13 +46,43 @@ YAHOO_MAP = {
 }
 
 LOG_FILE       = "coinbase_trade_log.csv"
+STATE_FILE     = "crypto_portfolio.json"
 PAPER_BALANCE  = 1000.0
 MAX_POSITION   = 0.15
 MIN_CONFIDENCE = 7
-
 COINBASE_BASE  = "https://api.coinbase.com"
 
-# ── COINBASE JWT AUTH — identical to working v2 ───────────────────────────────
+# ── PORTFOLIO PERSISTENCE ─────────────────────────────────────────────────────
+
+def load_portfolio() -> dict:
+    """Load portfolio state from JSON — persists between runs."""
+    if os.path.isfile(STATE_FILE):
+        try:
+            with open(STATE_FILE) as f:
+                state = json.load(f)
+            # Ensure all keys present
+            state.setdefault("eur_balance", PAPER_BALANCE)
+            state.setdefault("holdings", {})
+            state.setdefault("total_trades", 0)
+            state.setdefault("total_pnl", 0.0)
+            return state
+        except Exception:
+            pass
+    return {
+        "eur_balance":  PAPER_BALANCE,
+        "holdings":     {},
+        "total_trades": 0,
+        "total_pnl":    0.0,
+    }
+
+
+def save_portfolio(state: dict) -> None:
+    """Save portfolio state to JSON file."""
+    with open(STATE_FILE, "w") as f:
+        json.dump(state, f, indent=2)
+
+
+# ── COINBASE JWT AUTH ─────────────────────────────────────────────────────────
 
 def _build_jwt(method: str, path: str) -> str:
     private_key = serialization.load_pem_private_key(
@@ -165,51 +195,53 @@ def fetch_news(yahoo_ticker: str, max_items: int = 5) -> list[str]:
         return ["Could not fetch news."]
 
 
-# ── PAPER PORTFOLIO ───────────────────────────────────────────────────────────
-
-_portfolio = {
-    "eur_balance": PAPER_BALANCE,
-    "holdings":    {},
-}
-
+# ── PAPER TRADING ─────────────────────────────────────────────────────────────
 
 def simulate_trade(action: str, confidence: int,
-                   product: str, price: float) -> dict:
+                   product: str, price: float,
+                   portfolio: dict) -> dict:
     trade = {"action": action, "product": product,
              "price": price, "qty": 0.0,
-             "eur_value": 0.0, "note": ""}
-    p = _portfolio
+             "eur_value": 0.0, "pnl": 0.0, "note": ""}
 
     if action == "BUY":
         if confidence < MIN_CONFIDENCE:
             trade["note"] = f"Confidence {confidence}/10 below threshold"
             return trade
-        if p["eur_balance"] < 10:
+        if portfolio["eur_balance"] < 10:
             trade["note"] = "Insufficient paper balance"
             return trade
-        held = p["holdings"].get(product, {})
+        held = portfolio["holdings"].get(product, {})
         if held.get("qty", 0) > 0:
             trade["note"] = "Already holding — skipped"
             return trade
-        max_eur = p["eur_balance"] * MAX_POSITION * (confidence / 10)
+
+        max_eur = portfolio["eur_balance"] * MAX_POSITION * (confidence / 10)
         qty     = round(max_eur / price, 6)
         cost    = round(qty * price, 2)
-        p["eur_balance"] -= cost
-        p["holdings"][product] = {"qty": qty, "avg_buy": price}
+
+        portfolio["eur_balance"] = round(portfolio["eur_balance"] - cost, 2)
+        portfolio["holdings"][product] = {"qty": qty, "avg_buy": price}
+        portfolio["total_trades"] += 1
         trade.update({"qty": qty, "eur_value": cost,
                       "note": "Paper buy executed ✅"})
 
     elif action == "SELL":
-        held = p["holdings"].get(product, {})
+        held = portfolio["holdings"].get(product, {})
         if not held or held.get("qty", 0) <= 0:
             trade["note"] = "No position to sell — skipped"
             return trade
+
         qty      = held["qty"]
         proceeds = round(qty * price, 2)
         pnl      = round(proceeds - (held["avg_buy"] * qty), 2)
-        p["eur_balance"] += proceeds
-        p["holdings"][product] = {"qty": 0.0, "avg_buy": 0.0}
-        trade.update({"qty": qty, "eur_value": proceeds,
+
+        portfolio["eur_balance"] = round(portfolio["eur_balance"] + proceeds, 2)
+        portfolio["holdings"][product] = {"qty": 0.0, "avg_buy": 0.0}
+        portfolio["total_trades"] += 1
+        portfolio["total_pnl"]    = round(portfolio["total_pnl"] + pnl, 2)
+
+        trade.update({"qty": qty, "eur_value": proceeds, "pnl": pnl,
                       "note": f"Paper sell executed ✅  P&L: €{pnl:+.2f}"})
     else:
         trade["note"] = "Holding — no trade"
@@ -219,12 +251,13 @@ def simulate_trade(action: str, confidence: int,
 
 # ── CLAUDE ANALYSIS ───────────────────────────────────────────────────────────
 
-def build_prompt(market: dict, headlines: list[str]) -> str:
+def build_prompt(market: dict, headlines: list[str],
+                 portfolio: dict) -> str:
     price_table = "\n".join(
         f"  {date}: €{price}" for date, price in market["price_history"]
     )
     news_block = "\n".join(f"  - {h}" for h in headlines)
-    held       = _portfolio["holdings"].get(market["product"], {})
+    held       = portfolio["holdings"].get(market["product"], {})
     pos_info   = (
         f"Holding {held['qty']} units (avg buy: €{held['avg_buy']:.4f})"
         if held.get("qty", 0) > 0 else "No current position."
@@ -252,8 +285,10 @@ Analyse the following data and provide a trading recommendation.
 ### Current position
 {pos_info}
 
-### Paper EUR balance
-€{round(_portfolio['eur_balance'], 2)}
+### Paper portfolio
+- EUR balance:  €{round(portfolio['eur_balance'], 2)}
+- Total trades: {portfolio['total_trades']}
+- Total P&L:    €{portfolio['total_pnl']:+.2f}
 
 ### Recent news
 {news_block}
@@ -292,36 +327,40 @@ def call_claude(prompt: str) -> dict:
 
 # ── CSV LOGGING ───────────────────────────────────────────────────────────────
 
-def log_to_csv(market: dict, rec: dict, trade: dict) -> None:
+def log_to_csv(market: dict, rec: dict,
+               trade: dict, portfolio: dict) -> None:
     file_exists = os.path.isfile(LOG_FILE)
     fieldnames  = [
         "timestamp", "product", "price", "bid", "ask",
         "change_7d_pct", "sma_7", "sma_14", "rsi_14",
         "action", "confidence", "time_horizon",
         "price_target", "stop_loss", "reasoning",
-        "trade_qty", "trade_eur", "trade_note",
-        "paper_eur_balance",
+        "trade_qty", "trade_eur", "trade_pnl", "trade_note",
+        "paper_eur_balance", "paper_total_trades", "paper_total_pnl",
     ]
     row = {
-        "timestamp":       datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "product":         market["product"],
-        "price":           market["current_price"],
-        "bid":             market["bid"],
-        "ask":             market["ask"],
-        "change_7d_pct":   market["change_7d_pct"],
-        "sma_7":           market["sma_7"],
-        "sma_14":          market["sma_14"],
-        "rsi_14":          market["rsi_14"],
-        "action":          rec["action"],
-        "confidence":      rec["confidence"],
-        "time_horizon":    rec.get("time_horizon", ""),
-        "price_target":    rec.get("price_target", ""),
-        "stop_loss":       rec.get("stop_loss", ""),
-        "reasoning":       rec.get("reasoning", ""),
-        "trade_qty":       trade.get("qty", 0),
-        "trade_eur":       trade.get("eur_value", 0),
-        "trade_note":      trade.get("note", ""),
-        "paper_eur_balance": round(_portfolio["eur_balance"], 2),
+        "timestamp":          datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "product":            market["product"],
+        "price":              market["current_price"],
+        "bid":                market["bid"],
+        "ask":                market["ask"],
+        "change_7d_pct":      market["change_7d_pct"],
+        "sma_7":              market["sma_7"],
+        "sma_14":             market["sma_14"],
+        "rsi_14":             market["rsi_14"],
+        "action":             rec["action"],
+        "confidence":         rec["confidence"],
+        "time_horizon":       rec.get("time_horizon", ""),
+        "price_target":       rec.get("price_target", ""),
+        "stop_loss":          rec.get("stop_loss", ""),
+        "reasoning":          rec.get("reasoning", ""),
+        "trade_qty":          trade.get("qty", 0),
+        "trade_eur":          trade.get("eur_value", 0),
+        "trade_pnl":          trade.get("pnl", 0),
+        "trade_note":         trade.get("note", ""),
+        "paper_eur_balance":  round(portfolio["eur_balance"], 2),
+        "paper_total_trades": portfolio["total_trades"],
+        "paper_total_pnl":    portfolio["total_pnl"],
     }
     with open(LOG_FILE, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -335,20 +374,46 @@ def log_to_csv(market: dict, rec: dict, trade: dict) -> None:
 def print_ticker_report(market: dict, rec: dict, trade: dict) -> None:
     action = rec["action"]
     icon   = {"BUY": "🟢", "SELL": "🔴", "HOLD": "🟡"}.get(action, "⚪")
-    sep    = "─" * 62
-    print(f"\n{sep}")
+    print(f"\n  {'─'*58}")
     print(f"  {market['product']}  •  €{market['current_price']}  "
           f"({market['change_7d_pct']:+.1f}% / 7d)  |  RSI: {market['rsi_14']}")
-    print(f"  {icon}  {action}  (Confidence: {rec['confidence']}/10)"
+    print(f"  {icon}  {action}  ({rec['confidence']}/10)"
           f"  —  {rec.get('time_horizon', '')}")
     print(f"  {rec.get('reasoning', '')}")
     if rec.get("stop_loss"):
         print(f"  Stop-loss: €{rec['stop_loss']}")
-    if rec.get("price_target"):
-        print(f"  Target:    €{rec['price_target']}")
     for risk in rec.get("key_risks", []):
         print(f"  ⚠  {risk}")
     print(f"  📋  {trade['note']}")
+
+
+def print_portfolio_summary(portfolio: dict,
+                             market_prices: dict) -> None:
+    p = portfolio
+    print(f"\n  {'═'*58}")
+    print(f"  💼  Paper portfolio")
+    print(f"  EUR balance:   €{round(p['eur_balance'], 2)}")
+    print(f"  Total trades:  {p['total_trades']}")
+    print(f"  Realised P&L:  €{p['total_pnl']:+.2f}")
+
+    # Unrealised P&L from open positions
+    unrealised = 0.0
+    for product, h in p["holdings"].items():
+        if h.get("qty", 0) > 0:
+            current = market_prices.get(product, h["avg_buy"])
+            unreal  = round((current - h["avg_buy"]) * h["qty"], 2)
+            unrealised += unreal
+            print(f"  {product}: {h['qty']} units "
+                  f"(avg: €{h['avg_buy']:.4f}  "
+                  f"now: €{current:.4f}  "
+                  f"unreal: €{unreal:+.2f})")
+
+    if unrealised:
+        print(f"  Unrealised P&L: €{unrealised:+.2f}")
+
+    total_value = round(p["eur_balance"] + unrealised, 2)
+    print(f"  Total value:   €{total_value}")
+    print(f"  {'═'*58}")
 
 
 # ── MAIN ──────────────────────────────────────────────────────────────────────
@@ -364,40 +429,39 @@ def main():
     print(f"  Tracking: {', '.join(TICKERS)}")
     print(f"{'═'*62}")
 
+    # Load persistent portfolio
+    portfolio     = load_portfolio()
+    market_prices = {}
+
     for product_id in TICKERS:
         print(f"\n  Fetching {product_id}...")
         try:
-            candles    = fetch_coinbase_candles(product_id, limit=14)
-            live       = fetch_coinbase_price(product_id)
-            market     = build_market_data(product_id, candles, live)
-            headlines  = fetch_news(YAHOO_MAP.get(product_id, product_id))
+            candles   = fetch_coinbase_candles(product_id, limit=14)
+            live      = fetch_coinbase_price(product_id)
+            market    = build_market_data(product_id, candles, live)
+            headlines = fetch_news(YAHOO_MAP.get(product_id, product_id))
+
+            market_prices[product_id] = market["current_price"]
 
             print(f"  Calling Claude for {product_id}...")
-            rec   = call_claude(build_prompt(market, headlines))
+            rec   = call_claude(build_prompt(market, headlines, portfolio))
             trade = simulate_trade(
                 rec["action"], rec["confidence"],
-                product_id, market["current_price"]
+                product_id, market["current_price"], portfolio
             )
             print_ticker_report(market, rec, trade)
-            log_to_csv(market, rec, trade)
+            log_to_csv(market, rec, trade, portfolio)
 
         except Exception as e:
             print(f"  Error processing {product_id}: {e}")
             continue
 
-    # Portfolio summary
-    p = _portfolio
-    print(f"\n{'═'*62}")
-    print(f"  💼  Paper portfolio")
-    print(f"  EUR balance: €{round(p['eur_balance'], 2)}")
-    for prod, h in p["holdings"].items():
-        if h.get("qty", 0) > 0:
-            print(f"  {prod}: {h['qty']} units (avg: €{h['avg_buy']:.4f})")
-    if not any(h.get("qty", 0) > 0 for h in p["holdings"].values()):
-        print(f"  No open positions")
-    print(f"  📁  Logged to {LOG_FILE}")
-    print(f"  ⚠  Paper trading only. Not financial advice.")
-    print(f"{'═'*62}\n")
+    # Save updated portfolio state
+    save_portfolio(portfolio)
+    print_portfolio_summary(portfolio, market_prices)
+    print(f"\n  📁  Logged to {LOG_FILE}")
+    print(f"  💾  Portfolio saved to {STATE_FILE}")
+    print(f"  ⚠  Paper trading only. Not financial advice.\n")
 
 
 if __name__ == "__main__":
