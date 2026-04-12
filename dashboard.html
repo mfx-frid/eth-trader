@@ -250,15 +250,38 @@ function sigRow(r,idField,pricePrefix){
   </div>`;
 }
 
-function renderSummary(crypto,stocks){
+function renderSummary(crypto,stocks,portfolio){
   const lastC=crypto[crypto.length-1]||{};
   const lastS=stocks[stocks.length-1]||{};
 
-  // Crypto portfolio — handle both old (paper_eur) and new (paper_eur_balance) column names
-  const cryptoBalance=parseFloat(lastC.paper_eur_balance||lastC.paper_eur||1000)||1000;
-  const cryptoPnl=parseFloat(lastC.paper_total_pnl||0)||0;
+  // Crypto balance — prefer live JSON, fall back to CSV
+  const cryptoBalance = portfolio
+    ? parseFloat(portfolio.eur_balance||1000)
+    : parseFloat(lastC.paper_eur_balance||lastC.paper_eur||1000)||1000;
+  const cryptoPnl = portfolio
+    ? parseFloat(portfolio.total_pnl||0)
+    : parseFloat(lastC.paper_total_pnl||0)||0;
 
-  // Stock portfolio — handle both old and new column names
+  // Open positions from JSON
+  const holdings = portfolio?.holdings || {};
+  const openPositions = Object.entries(holdings)
+    .filter(([,h])=>parseFloat(h.qty||0)>0);
+
+  // Latest prices for unrealised P&L
+  const latestPrices={};
+  crypto.forEach(r=>{latestPrices[r.product]=parseFloat(r.price||0)});
+
+  const unrealised = openPositions.reduce((sum,[product,h])=>{
+    const cur=latestPrices[product]||h.avg_buy;
+    return sum + (cur - h.avg_buy) * h.qty;
+  },0);
+
+  const totalCryptoValue = cryptoBalance + openPositions.reduce((sum,[product,h])=>{
+    const cur=latestPrices[product]||h.avg_buy;
+    return sum + cur * h.qty;
+  },0);
+
+  // Stock portfolio
   const portVal=parseFloat(lastS.portfolio_value||lastS.buying_power||100000)||100000;
   const portPnl=portVal-100000;
 
@@ -273,6 +296,21 @@ function renderSummary(crypto,stocks){
   const ethPrice=crypto.filter(r=>r.product==="ETH-EUR").slice(-1)[0]?.price||"—";
   const btcPrice=crypto.filter(r=>r.product==="BTC-EUR").slice(-1)[0]?.price||"—";
 
+  // Build open positions HTML
+  const posHTML = openPositions.length > 0
+    ? openPositions.map(([product,h])=>{
+        const cur=latestPrices[product]||h.avg_buy;
+        const unreal=((cur-h.avg_buy)*h.qty);
+        const cls=unreal>=0?"pos":"neg";
+        return`<div class="card">
+          <div class="card-label">${product} held</div>
+          <div class="card-value" style="font-size:15px">${parseFloat(h.qty).toFixed(4)}</div>
+          <div class="card-sub">Avg €${parseFloat(h.avg_buy).toFixed(4)}</div>
+          <div class="card-sub ${cls}">Unreal €${unreal>=0?"+":""}${unreal.toFixed(2)}</div>
+        </div>`;
+      }).join("")
+    : "";
+
   document.getElementById("summary-cards").innerHTML=`
     <div class="card">
       <div class="card-label">ETH-EUR</div>
@@ -285,10 +323,16 @@ function renderSummary(crypto,stocks){
       <div class="card-sub">Live price</div>
     </div>
     <div class="card">
-      <div class="card-label">Crypto paper balance</div>
+      <div class="card-label">Crypto EUR balance</div>
       <div class="card-value">€${cryptoBalance.toFixed(2)}</div>
-      <div class="card-sub ${cryptoPnl>=0?"pos":"neg"}">P&L €${cryptoPnl>=0?"+":""}${cryptoPnl.toFixed(2)}</div>
+      <div class="card-sub">of €1,000 starting</div>
     </div>
+    <div class="card">
+      <div class="card-label">Crypto total value</div>
+      <div class="card-value">€${totalCryptoValue.toFixed(2)}</div>
+      <div class="card-sub ${unrealised>=0?"pos":"neg"}">Unreal €${unrealised>=0?"+":""}${unrealised.toFixed(2)}</div>
+    </div>
+    ${posHTML}
     <div class="card">
       <div class="card-label">Stock portfolio</div>
       <div class="card-value">$${portVal.toLocaleString()}</div>
@@ -415,11 +459,20 @@ function renderTrades(crypto,stocks){
   }).join("");
 }
 
+async function fetchJSON(file){
+  try{
+    const r=await fetch(csvUrl(file));
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  }catch(e){return null}
+}
+
 async function init(){
   document.getElementById("updated").textContent="Loading data from GitHub...";
-  const[crypto,stocks]=await Promise.all([
+  const[crypto,stocks,portfolio]=await Promise.all([
     fetchCSV("coinbase_trade_log.csv"),
     fetchCSV("alpaca_trade_log.csv"),
+    fetchJSON("crypto_portfolio.json"),
   ]);
 
   const err=document.getElementById("errors");
@@ -431,7 +484,7 @@ async function init(){
   const c=crypto||[];
   const s=stocks||[];
 
-  renderSummary(c,s);
+  renderSummary(c,s,portfolio);
   if(c.length)renderCrypto(c);
   if(s.length)renderStocks(s);
   renderTrades(c,s);
