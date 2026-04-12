@@ -6,522 +6,438 @@
 <title>Claude Trading Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #0f1117;
-    color: #e2e8f0;
-    min-height: 100vh;
-    padding: 24px;
-  }
-
-  h1 {
-    font-size: 22px;
-    font-weight: 500;
-    color: #f8fafc;
-    margin-bottom: 4px;
-  }
-
-  .subtitle {
-    font-size: 13px;
-    color: #64748b;
-    margin-bottom: 28px;
-  }
-
-  .section-title {
-    font-size: 14px;
-    font-weight: 500;
-    color: #94a3b8;
-    margin: 28px 0 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-
-  .card {
-    background: #1e2330;
-    border: 0.5px solid #2d3748;
-    border-radius: 12px;
-    padding: 16px;
-  }
-
-  .card-label {
-    font-size: 12px;
-    color: #64748b;
-    margin-bottom: 6px;
-  }
-
-  .card-value {
-    font-size: 22px;
-    font-weight: 500;
-    color: #f8fafc;
-  }
-
-  .card-sub {
-    font-size: 12px;
-    color: #64748b;
-    margin-top: 4px;
-  }
-
-  .positive { color: #34d399; }
-  .negative { color: #f87171; }
-  .neutral  { color: #94a3b8; }
-
-  .chart-card {
-    background: #1e2330;
-    border: 0.5px solid #2d3748;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 12px;
-  }
-
-  .chart-title {
-    font-size: 13px;
-    font-weight: 500;
-    color: #94a3b8;
-    margin-bottom: 16px;
-  }
-
-  .chart-wrap {
-    position: relative;
-    height: 200px;
-  }
-
-  .grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .signal-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-    border-bottom: 0.5px solid #2d3748;
-    font-size: 13px;
-  }
-
-  .signal-row:last-child { border-bottom: none; }
-
-  .badge {
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 500;
-    min-width: 48px;
-    text-align: center;
-  }
-
-  .badge-buy  { background: #064e3b; color: #34d399; }
-  .badge-sell { background: #450a0a; color: #f87171; }
-  .badge-hold { background: #1c1917; color: #a8a29e; }
-
-  .signal-ticker { font-weight: 500; min-width: 48px; color: #f8fafc; }
-  .signal-price  { color: #94a3b8; min-width: 80px; }
-  .signal-conf   { color: #64748b; font-size: 12px; }
-  .signal-time   { color: #475569; font-size: 11px; margin-left: auto; }
-
-  .reasoning-text {
-    font-size: 12px;
-    color: #64748b;
-    margin-top: 4px;
-    line-height: 1.5;
-  }
-
-  .tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-
-  .tab {
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-    cursor: pointer;
-    border: 0.5px solid #2d3748;
-    background: transparent;
-    color: #64748b;
-    transition: all 0.15s;
-  }
-
-  .tab.active {
-    background: #2d3748;
-    color: #f8fafc;
-    border-color: #4a5568;
-  }
-
-  .loading {
-    text-align: center;
-    padding: 60px 20px;
-    color: #475569;
-    font-size: 14px;
-  }
-
-  .error-msg {
-    background: #450a0a;
-    border: 0.5px solid #7f1d1d;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 13px;
-    color: #fca5a5;
-    margin-bottom: 16px;
-  }
-
-  .rsi-bar-wrap {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 4px 0;
-  }
-
-  .rsi-label { font-size: 12px; color: #94a3b8; min-width: 44px; }
-
-  .rsi-bar-bg {
-    flex: 1;
-    height: 6px;
-    background: #2d3748;
-    border-radius: 3px;
-    overflow: hidden;
-  }
-
-  .rsi-bar-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.4s;
-  }
-
-  .rsi-val { font-size: 12px; color: #64748b; min-width: 32px; text-align: right; }
-
-  @media (max-width: 600px) {
-    body { padding: 16px; }
-    .grid-2 { grid-template-columns: 1fr; }
-  }
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;padding:20px}
+h1{font-size:20px;font-weight:500;color:#f8fafc;margin-bottom:2px}
+.sub{font-size:12px;color:#475569;margin-bottom:20px}
+.section{font-size:11px;font-weight:500;color:#64748b;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.06em}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:4px}
+.card{background:#1e2330;border:.5px solid #2d3748;border-radius:10px;padding:14px}
+.card-label{font-size:11px;color:#64748b;margin-bottom:5px}
+.card-value{font-size:20px;font-weight:500;color:#f8fafc}
+.card-sub{font-size:11px;color:#64748b;margin-top:3px}
+.pos{color:#34d399}.neg{color:#f87171}.neu{color:#94a3b8}
+.chart-card{background:#1e2330;border:.5px solid #2d3748;border-radius:10px;padding:16px;margin-bottom:10px}
+.chart-title{font-size:12px;color:#64748b;margin-bottom:12px}
+.chart-wrap{position:relative;height:180px}
+.chart-wrap-sm{position:relative;height:140px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab{padding:5px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:.5px solid #2d3748;background:transparent;color:#64748b;transition:all .15s}
+.tab.active{background:#2d3748;color:#f8fafc;border-color:#4a5568}
+.sig-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:.5px solid #1e2330;font-size:12px}
+.sig-row:last-child{border-bottom:none}
+.badge{padding:2px 8px;border-radius:12px;font-size:10px;font-weight:500;min-width:40px;text-align:center;flex-shrink:0}
+.b-buy{background:#064e3b;color:#34d399}
+.b-sell{background:#450a0a;color:#f87171}
+.b-hold{background:#1c1917;color:#78716c}
+.sig-ticker{font-weight:500;color:#f8fafc;min-width:72px;flex-shrink:0}
+.sig-price{color:#94a3b8;min-width:80px;flex-shrink:0}
+.sig-conf{color:#64748b;min-width:30px;flex-shrink:0}
+.sig-time{color:#475569;font-size:10px;margin-left:auto;flex-shrink:0}
+.sig-reason{font-size:11px;color:#475569;margin-top:2px;line-height:1.4;grid-column:1/-1}
+.rsi-wrap{display:flex;align-items:center;gap:8px;margin:4px 0}
+.rsi-lbl{font-size:11px;color:#94a3b8;min-width:72px}
+.rsi-bg{flex:1;height:5px;background:#2d3748;border-radius:3px;overflow:hidden}
+.rsi-fill{height:100%;border-radius:3px}
+.rsi-val{font-size:11px;color:#64748b;min-width:28px;text-align:right}
+.mkt-open{color:#34d399;font-size:11px}
+.mkt-closed{color:#f87171;font-size:11px}
+.err{background:#450a0a;border:.5px solid #7f1d1d;border-radius:8px;padding:10px 14px;font-size:12px;color:#fca5a5;margin-bottom:12px}
+.trade-row{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:.5px solid #1e2330;font-size:11px}
+.trade-row:last-child{border-bottom:none}
+.load{text-align:center;padding:40px;color:#475569;font-size:13px}
+@media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
-
 <h1>Claude Trading Dashboard</h1>
-<p class="subtitle" id="last-updated">Loading...</p>
+<p class="sub" id="updated">Loading...</p>
+<div id="errors"></div>
 
-<div id="error-area"></div>
+<div class="section">Portfolio overview</div>
+<div class="cards" id="summary-cards"><div class="load">Fetching data...</div></div>
 
-<!-- Summary cards -->
-<div class="section-title">Portfolio overview</div>
-<div class="cards" id="summary-cards">
-  <div class="loading">Fetching data...</div>
-</div>
-
-<!-- Tabs -->
-<div class="section-title">Analysis</div>
+<div class="section">Analysis</div>
 <div class="tabs">
-  <button class="tab active" onclick="showTab('eth')">ETH-EUR</button>
-  <button class="tab" onclick="showTab('stocks')">Stocks</button>
+  <button class="tab active" onclick="showTab('crypto')">🔵 Crypto (6)</button>
+  <button class="tab" onclick="showTab('stocks')">📈 Stocks (6)</button>
+  <button class="tab" onclick="showTab('trades')">📋 Trade history</button>
 </div>
 
-<!-- ETH section -->
-<div id="tab-eth">
+<!-- CRYPTO TAB -->
+<div id="tab-crypto">
+  <div class="grid2">
+    <div class="chart-card">
+      <div class="chart-title">ETH-EUR price — last 24 signals</div>
+      <div class="chart-wrap"><canvas id="ethChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">BTC-EUR price — last 24 signals</div>
+      <div class="chart-wrap"><canvas id="btcChart"></canvas></div>
+    </div>
+  </div>
   <div class="chart-card">
-    <div class="chart-title">ETH-EUR price (14 days)</div>
-    <div class="chart-wrap"><canvas id="ethPriceChart"></canvas></div>
+    <div class="chart-title">RSI-14 — all crypto pairs (latest)</div>
+    <div id="crypto-rsi"></div>
   </div>
-  <div class="grid-2">
+  <div class="grid2">
     <div class="chart-card">
-      <div class="chart-title">RSI-14 history</div>
-      <div class="chart-wrap"><canvas id="ethRsiChart"></canvas></div>
+      <div class="chart-title">Latest crypto signals</div>
+      <div id="crypto-signals"><div class="load">Loading...</div></div>
     </div>
     <div class="chart-card">
-      <div class="chart-title">Signal history</div>
-      <div id="eth-signals"><div class="loading">Loading...</div></div>
+      <div class="chart-title">Signal distribution</div>
+      <div class="chart-wrap-sm"><canvas id="cryptoDonut"></canvas></div>
     </div>
   </div>
 </div>
 
-<!-- Stocks section -->
+<!-- STOCKS TAB -->
 <div id="tab-stocks" style="display:none">
-  <div class="chart-card">
-    <div class="chart-title">RSI by ticker</div>
-    <div id="stock-rsi-bars"></div>
+  <div class="grid2">
+    <div class="chart-card">
+      <div class="chart-title">NVDA price — last 20 signals</div>
+      <div class="chart-wrap"><canvas id="nvdaChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">TSLA price — last 20 signals</div>
+      <div class="chart-wrap"><canvas id="tslaChart"></canvas></div>
+    </div>
   </div>
   <div class="chart-card">
-    <div class="chart-title">Latest signals</div>
-    <div id="stock-signals"><div class="loading">Loading...</div></div>
+    <div class="chart-title">RSI-14 — all stocks (latest)</div>
+    <div id="stock-rsi"></div>
+  </div>
+  <div class="grid2">
+    <div class="chart-card">
+      <div class="chart-title">Latest stock signals</div>
+      <div id="stock-signals"><div class="load">Loading...</div></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Signal distribution</div>
+      <div class="chart-wrap-sm"><canvas id="stockDonut"></canvas></div>
+    </div>
   </div>
   <div class="chart-card">
-    <div class="chart-title">Signal distribution</div>
-    <div class="chart-wrap" style="height:160px"><canvas id="stockSignalChart"></canvas></div>
+    <div class="chart-title">Alpaca portfolio value over time</div>
+    <div class="chart-wrap"><canvas id="portfolioChart"></canvas></div>
+  </div>
+</div>
+
+<!-- TRADES TAB -->
+<div id="tab-trades" style="display:none">
+  <div class="chart-card">
+    <div class="chart-title">All executed trades</div>
+    <div id="trade-history"><div class="load">Loading...</div></div>
   </div>
 </div>
 
 <script>
-const GITHUB_USER = "mfx-frid";
-const REPO        = "eth-trader";
-const BRANCH      = "main";
+const USER   = "mfx-frid";
+const REPO   = "eth-trader";
+const BRANCH = "main";
 
-function csvUrl(file) {
-  return `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO}/${BRANCH}/${file}?t=${Date.now()}`;
-}
+function csvUrl(f){return`https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/${f}?t=${Date.now()}`}
 
-// ── CSV parser ────────────────────────────────────────────────────────────────
-function parseCSV(text) {
-  const lines = text.trim().split("\n").filter(l => l.trim());
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map(h => h.trim().replace(/"/g, ""));
-  return lines.slice(1).map(line => {
-    const vals = [];
-    let cur = "", inQ = false;
-    for (const ch of line) {
-      if (ch === '"') { inQ = !inQ; }
-      else if (ch === "," && !inQ) { vals.push(cur.trim()); cur = ""; }
-      else { cur += ch; }
+function parseCSV(text){
+  const lines=text.trim().split("\n").filter(l=>l.trim());
+  if(lines.length<2)return[];
+  const headers=lines[0].split(",").map(h=>h.trim().replace(/"/g,""));
+  return lines.slice(1).map(line=>{
+    const vals=[];let cur="",inQ=false;
+    for(const ch of line){
+      if(ch==='"'){inQ=!inQ}
+      else if(ch===","&&!inQ){vals.push(cur.trim());cur=""}
+      else{cur+=ch}
     }
     vals.push(cur.trim());
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = (vals[i] || "").replace(/"/g, ""));
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=(vals[i]||"").replace(/"/g,""));
     return obj;
   });
 }
 
-// ── Fetch CSV from GitHub ─────────────────────────────────────────────────────
-async function fetchCSV(file) {
-  try {
-    const resp = await fetch(csvUrl(file));
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    return parseCSV(await resp.text());
-  } catch (e) {
-    return null;
-  }
+async function fetchCSV(file){
+  try{
+    const r=await fetch(csvUrl(file));
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    return parseCSV(await r.text());
+  }catch(e){return null}
 }
 
-// ── Chart defaults ────────────────────────────────────────────────────────────
-Chart.defaults.color = "#64748b";
-Chart.defaults.borderColor = "#2d3748";
-Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-Chart.defaults.font.size = 11;
+Chart.defaults.color="#64748b";
+Chart.defaults.borderColor="#2d3748";
+Chart.defaults.font.family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+Chart.defaults.font.size=10;
 
-function lineChart(id, labels, datasets, yLabel = "") {
-  const ctx = document.getElementById(id);
-  if (!ctx) return;
-  return new Chart(ctx, {
-    type: "line",
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: datasets.length > 1 } },
-      scales: {
-        x: { grid: { color: "#1e2330" }, ticks: { maxTicksLimit: 6 } },
-        y: { grid: { color: "#2d3748" }, title: { display: !!yLabel, text: yLabel } }
+function lineChart(id,labels,datasets){
+  const ctx=document.getElementById(id);
+  if(!ctx)return;
+  return new Chart(ctx,{
+    type:"line",
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:datasets.length>1,labels:{boxWidth:10,padding:8}}},
+      scales:{
+        x:{grid:{color:"#1a2030"},ticks:{maxTicksLimit:6}},
+        y:{grid:{color:"#2d3748"}}
       },
-      elements: { point: { radius: 2 }, line: { tension: 0.3 } }
+      elements:{point:{radius:1.5},line:{tension:0.3,borderWidth:1.5}}
     }
   });
 }
 
-// ── Signal badge ──────────────────────────────────────────────────────────────
-function badge(action) {
-  const cls = { BUY: "badge-buy", SELL: "badge-sell", HOLD: "badge-hold" }[action] || "badge-hold";
-  return `<span class="badge ${cls}">${action}</span>`;
-}
-
-// ── Tabs ──────────────────────────────────────────────────────────────────────
-function showTab(name) {
-  document.getElementById("tab-eth").style.display    = name === "eth"    ? "" : "none";
-  document.getElementById("tab-stocks").style.display = name === "stocks" ? "" : "none";
-  document.querySelectorAll(".tab").forEach((t, i) => {
-    t.classList.toggle("active", (i === 0 && name === "eth") || (i === 1 && name === "stocks"));
+function donut(id,labels,data,colors){
+  const ctx=document.getElementById(id);
+  if(!ctx)return;
+  new Chart(ctx,{
+    type:"doughnut",
+    data:{labels,datasets:[{data,backgroundColor:colors,borderColor:["#34d399","#78716c","#f87171"],borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{boxWidth:10,padding:6}}},cutout:"60%"}
   });
 }
 
-// ── RSI colour ────────────────────────────────────────────────────────────────
-function rsiColor(v) {
-  if (v >= 70) return "#f87171";
-  if (v <= 30) return "#34d399";
-  return "#60a5fa";
+function rsiColor(v){
+  if(v>=70)return"#f87171";
+  if(v<=30)return"#34d399";
+  return"#60a5fa";
 }
 
-// ── Summary cards ─────────────────────────────────────────────────────────────
-function renderSummary(ethRows, stockRows) {
-  const latestEth   = ethRows[ethRows.length - 1] || {};
-  const latestStock = stockRows[stockRows.length - 1] || {};
-
-  // Count signals
-  const ethBuys  = ethRows.filter(r => r.action === "BUY").length;
-  const ethHolds = ethRows.filter(r => r.action === "HOLD").length;
-  const ethSells = ethRows.filter(r => r.action === "SELL").length;
-
-  const portVal  = parseFloat(latestStock.portfolio_value || 100000);
-  const pnl      = portVal - 100000;
-  const pnlClass = pnl >= 0 ? "positive" : "negative";
-  const pnlSign  = pnl >= 0 ? "+" : "";
-
-  document.getElementById("summary-cards").innerHTML = `
-    <div class="card">
-      <div class="card-label">ETH-EUR price</div>
-      <div class="card-value">€${parseFloat(latestEth.price || 0).toFixed(2)}</div>
-      <div class="card-sub ${parseFloat(latestEth.change_7d_pct) >= 0 ? 'positive' : 'negative'}">
-        ${parseFloat(latestEth.change_7d_pct || 0) >= 0 ? "+" : ""}${parseFloat(latestEth.change_7d_pct || 0).toFixed(1)}% / 7d
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-label">ETH RSI-14</div>
-      <div class="card-value" style="color:${rsiColor(parseFloat(latestEth.rsi_14 || 50))}">
-        ${parseFloat(latestEth.rsi_14 || 0).toFixed(1)}
-      </div>
-      <div class="card-sub">${parseFloat(latestEth.rsi_14 || 50) >= 70 ? "Overbought" : parseFloat(latestEth.rsi_14 || 50) <= 30 ? "Oversold" : "Neutral"}</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Paper portfolio</div>
-      <div class="card-value">$${portVal.toLocaleString()}</div>
-      <div class="card-sub ${pnlClass}">${pnlSign}$${pnl.toFixed(2)} P&amp;L</div>
-    </div>
-    <div class="card">
-      <div class="card-label">ETH signals (all time)</div>
-      <div class="card-value">${ethRows.length}</div>
-      <div class="card-sub">
-        <span class="positive">${ethBuys}B</span> &nbsp;
-        <span class="neutral">${ethHolds}H</span> &nbsp;
-        <span class="negative">${ethSells}S</span>
-      </div>
-    </div>
-  `;
+function badge(a){
+  const cls={BUY:"b-buy",SELL:"b-sell",HOLD:"b-hold"}[a]||"b-hold";
+  return`<span class="badge ${cls}">${a}</span>`;
 }
 
-// ── ETH charts ────────────────────────────────────────────────────────────────
-function renderEth(rows) {
-  const last24 = rows.slice(-24);
-  const labels  = last24.map(r => r.timestamp ? r.timestamp.slice(11, 16) : "");
-  const prices  = last24.map(r => parseFloat(r.price || 0));
-  const rsis    = last24.map(r => parseFloat(r.rsi_14 || 0));
-  const sma7s   = last24.map(r => parseFloat(r.sma_7 || 0));
+function showTab(name){
+  ["crypto","stocks","trades"].forEach(t=>{
+    document.getElementById(`tab-${t}`).style.display=t===name?"":"none";
+  });
+  document.querySelectorAll(".tab").forEach((t,i)=>{
+    const names=["crypto","stocks","trades"];
+    t.classList.toggle("active",names[i]===name);
+  });
+}
 
-  lineChart("ethPriceChart", labels, [
-    { label: "Price", data: prices, borderColor: "#60a5fa", backgroundColor: "rgba(96,165,250,0.08)", fill: true, borderWidth: 1.5 },
-    { label: "SMA-7", data: sma7s,  borderColor: "#f59e0b", borderDash: [4,4], borderWidth: 1, pointRadius: 0 },
-  ]);
+function rsiBar(label,rsi){
+  const c=rsiColor(rsi);
+  return`<div class="rsi-wrap">
+    <span class="rsi-lbl">${label}</span>
+    <div class="rsi-bg"><div class="rsi-fill" style="width:${Math.min(rsi,100)}%;background:${c}"></div></div>
+    <span class="rsi-val" style="color:${c}">${rsi.toFixed(1)}</span>
+  </div>`;
+}
 
-  lineChart("ethRsiChart", labels, [
-    { label: "RSI-14", data: rsis, borderColor: "#a78bfa", borderWidth: 1.5,
-      segment: { borderColor: ctx => rsiColor(ctx.p1.parsed.y) } }
-  ]);
-
-  // Draw overbought/oversold lines on RSI chart
-  const rsiChart = Chart.getChart("ethRsiChart");
-  if (rsiChart) {
-    rsiChart.options.plugins.annotation = {};
-    rsiChart.options.scales.y.min = 0;
-    rsiChart.options.scales.y.max = 100;
-    rsiChart.update();
-  }
-
-  // Signal list
-  const last8 = rows.slice(-8).reverse();
-  document.getElementById("eth-signals").innerHTML = last8.map(r => `
-    <div class="signal-row">
+function sigRow(r,idField,pricePrefix){
+  const ticker=r[idField]||"?";
+  const price=parseFloat(r.price||0).toFixed(ticker.includes("BTC")?2:4);
+  const chg=parseFloat(r.change_7d_pct||0);
+  const chgStr=(chg>=0?"+":"")+chg.toFixed(1)+"%";
+  const chgCls=chg>=0?"pos":"neg";
+  const reason=(r.reasoning||"").slice(0,100)+(r.reasoning&&r.reasoning.length>100?"…":"");
+  return`<div>
+    <div class="sig-row">
       ${badge(r.action)}
-      <span class="signal-price">€${parseFloat(r.price || 0).toFixed(2)}</span>
-      <span class="signal-conf">${r.confidence}/10</span>
-      <span class="signal-time">${(r.timestamp || "").slice(5, 16)}</span>
+      <span class="sig-ticker">${ticker}</span>
+      <span class="sig-price">${pricePrefix}${price}</span>
+      <span class="sig-conf ${chgCls}">${chgStr}</span>
+      <span class="sig-conf">${r.confidence||0}/10</span>
+      <span class="sig-time">${(r.timestamp||"").slice(5,16)}</span>
     </div>
-    <div class="reasoning-text">${r.reasoning ? r.reasoning.slice(0, 100) + (r.reasoning.length > 100 ? "…" : "") : ""}</div>
-  `).join("");
+    ${reason?`<div class="sig-reason">${reason}</div>`:""}
+  </div>`;
 }
 
-// ── Stock charts ──────────────────────────────────────────────────────────────
-function renderStocks(rows) {
-  // Get latest row per ticker
-  const tickers = [...new Set(rows.map(r => r.ticker))];
-  const latest  = {};
-  rows.forEach(r => { latest[r.ticker] = r; });
+function renderSummary(crypto,stocks){
+  const lastC=crypto[crypto.length-1]||{};
+  const lastS=stocks[stocks.length-1]||{};
+
+  // Crypto portfolio value estimate
+  const cryptoBalance=parseFloat(lastC.paper_eur_balance||1000);
+  const cryptoPnl=parseFloat(lastC.paper_total_pnl||0);
+
+  // Stock portfolio
+  const portVal=parseFloat(lastS.portfolio_value||100000);
+  const portPnl=portVal-100000;
+
+  // Signal counts
+  const cBuy=crypto.filter(r=>r.action==="BUY").length;
+  const cHold=crypto.filter(r=>r.action==="HOLD").length;
+  const cSell=crypto.filter(r=>r.action==="SELL").length;
+  const sBuy=stocks.filter(r=>r.action==="BUY").length;
+  const sHold=stocks.filter(r=>r.action==="HOLD").length;
+  const sSell=stocks.filter(r=>r.action==="SELL").length;
+
+  const ethPrice=crypto.filter(r=>r.product==="ETH-EUR").slice(-1)[0]?.price||"—";
+  const btcPrice=crypto.filter(r=>r.product==="BTC-EUR").slice(-1)[0]?.price||"—";
+
+  document.getElementById("summary-cards").innerHTML=`
+    <div class="card">
+      <div class="card-label">ETH-EUR</div>
+      <div class="card-value">€${parseFloat(ethPrice||0).toFixed(2)}</div>
+      <div class="card-sub">Live price</div>
+    </div>
+    <div class="card">
+      <div class="card-label">BTC-EUR</div>
+      <div class="card-value">€${parseFloat(btcPrice||0).toLocaleString()}</div>
+      <div class="card-sub">Live price</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Crypto paper balance</div>
+      <div class="card-value">€${cryptoBalance.toFixed(2)}</div>
+      <div class="card-sub ${cryptoPnl>=0?"pos":"neg"}">P&L €${cryptoPnl>=0?"+":""}${cryptoPnl.toFixed(2)}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Stock portfolio</div>
+      <div class="card-value">$${portVal.toLocaleString()}</div>
+      <div class="card-sub ${portPnl>=0?"pos":"neg"}">P&L $${portPnl>=0?"+":""}${portPnl.toFixed(2)}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Crypto signals</div>
+      <div class="card-value">${crypto.length}</div>
+      <div class="card-sub"><span class="pos">${cBuy}B</span> <span class="neu">${cHold}H</span> <span class="neg">${cSell}S</span></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Stock signals</div>
+      <div class="card-value">${stocks.length}</div>
+      <div class="card-sub"><span class="pos">${sBuy}B</span> <span class="neu">${sHold}H</span> <span class="neg">${sSell}S</span></div>
+    </div>`;
+}
+
+function renderCrypto(rows){
+  // ETH price chart
+  const eth=rows.filter(r=>r.product==="ETH-EUR").slice(-24);
+  const btc=rows.filter(r=>r.product==="BTC-EUR").slice(-24);
+
+  lineChart("ethChart",
+    eth.map(r=>(r.timestamp||"").slice(11,16)),
+    [{label:"ETH-EUR",data:eth.map(r=>parseFloat(r.price||0)),borderColor:"#60a5fa",backgroundColor:"rgba(96,165,250,0.06)",fill:true},
+     {label:"SMA-7",data:eth.map(r=>parseFloat(r.sma_7||0)),borderColor:"#f59e0b",borderDash:[3,3],pointRadius:0}]
+  );
+  lineChart("btcChart",
+    btc.map(r=>(r.timestamp||"").slice(11,16)),
+    [{label:"BTC-EUR",data:btc.map(r=>parseFloat(r.price||0)),borderColor:"#fb923c",backgroundColor:"rgba(251,146,60,0.06)",fill:true},
+     {label:"SMA-7",data:btc.map(r=>parseFloat(r.sma_7||0)),borderColor:"#f59e0b",borderDash:[3,3],pointRadius:0}]
+  );
+
+  // RSI bars — latest per product
+  const products=["ETH-EUR","BTC-EUR","SOL-EUR","XRP-EUR","LTC-EUR","DOGE-EUR"];
+  const latest={};
+  rows.forEach(r=>{latest[r.product]=r});
+  document.getElementById("crypto-rsi").innerHTML=
+    products.map(p=>rsiBar(p,parseFloat(latest[p]?.rsi_14||50))).join("");
+
+  // Latest signals — most recent per product
+  document.getElementById("crypto-signals").innerHTML=
+    products.map(p=>latest[p]?sigRow(latest[p],"product","€"):"").join("");
+
+  // Donut
+  const counts={BUY:0,HOLD:0,SELL:0};
+  rows.forEach(r=>{if(counts[r.action]!==undefined)counts[r.action]++});
+  donut("cryptoDonut",["BUY","HOLD","SELL"],
+    [counts.BUY,counts.HOLD,counts.SELL],
+    ["#064e3b","#1c1917","#450a0a"]);
+}
+
+function renderStocks(rows){
+  const nvda=rows.filter(r=>r.ticker==="NVDA").slice(-20);
+  const tsla=rows.filter(r=>r.ticker==="TSLA").slice(-20);
+
+  lineChart("nvdaChart",
+    nvda.map(r=>(r.timestamp||"").slice(11,16)),
+    [{label:"NVDA",data:nvda.map(r=>parseFloat(r.price||0)),borderColor:"#a78bfa",backgroundColor:"rgba(167,139,250,0.06)",fill:true},
+     {label:"SMA-7",data:nvda.map(r=>parseFloat(r.sma_7||0)),borderColor:"#f59e0b",borderDash:[3,3],pointRadius:0}]
+  );
+  lineChart("tslaChart",
+    tsla.map(r=>(r.timestamp||"").slice(11,16)),
+    [{label:"TSLA",data:tsla.map(r=>parseFloat(r.price||0)),borderColor:"#f87171",backgroundColor:"rgba(248,113,113,0.06)",fill:true},
+     {label:"SMA-7",data:tsla.map(r=>parseFloat(r.sma_7||0)),borderColor:"#f59e0b",borderDash:[3,3],pointRadius:0}]
+  );
 
   // RSI bars
-  document.getElementById("stock-rsi-bars").innerHTML = tickers.map(t => {
-    const r   = latest[t] || {};
-    const rsi = parseFloat(r.rsi_14 || 50);
-    return `
-      <div class="rsi-bar-wrap">
-        <span class="rsi-label">${t}</span>
-        <div class="rsi-bar-bg">
-          <div class="rsi-bar-fill" style="width:${rsi}%;background:${rsiColor(rsi)}"></div>
-        </div>
-        <span class="rsi-val">${rsi.toFixed(1)}</span>
-      </div>`;
-  }).join("");
+  const tickers=["NVDA","AAPL","TSLA","META","AMD","COIN"];
+  const latest={};
+  rows.forEach(r=>{latest[r.ticker]=r});
+  document.getElementById("stock-rsi").innerHTML=
+    tickers.map(t=>rsiBar(t,parseFloat(latest[t]?.rsi_14||50))).join("");
 
-  // Latest signals per ticker
-  document.getElementById("stock-signals").innerHTML = tickers.map(t => {
-    const r = latest[t] || {};
-    return `
-      <div class="signal-row">
-        ${badge(r.action || "HOLD")}
-        <span class="signal-ticker">${t}</span>
-        <span class="signal-price">$${parseFloat(r.price || 0).toFixed(2)}</span>
-        <span class="signal-conf">${r.confidence || 0}/10</span>
-        <span class="signal-time">${(r.timestamp || "").slice(5, 16)}</span>
-      </div>
-      <div class="reasoning-text">${r.reasoning ? r.reasoning.slice(0, 120) + (r.reasoning.length > 120 ? "…" : "") : ""}</div>
-    `;
-  }).join("");
+  // Latest signals
+  document.getElementById("stock-signals").innerHTML=
+    tickers.map(t=>latest[t]?sigRow(latest[t],"ticker","$"):"").join("");
 
-  // Signal distribution donut
-  const counts = { BUY: 0, HOLD: 0, SELL: 0 };
-  rows.forEach(r => { if (counts[r.action] !== undefined) counts[r.action]++; });
-  const ctx = document.getElementById("stockSignalChart");
-  if (ctx) {
-    new Chart(ctx, {
-      type: "doughnut",
-      data: {
-        labels: ["BUY", "HOLD", "SELL"],
-        datasets: [{
-          data: [counts.BUY, counts.HOLD, counts.SELL],
-          backgroundColor: ["#064e3b", "#1c1917", "#450a0a"],
-          borderColor:     ["#34d399", "#a8a29e", "#f87171"],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: "right" } },
-        cutout: "65%"
-      }
-    });
-  }
+  // Donut
+  const counts={BUY:0,HOLD:0,SELL:0};
+  rows.forEach(r=>{if(counts[r.action]!==undefined)counts[r.action]++});
+  donut("stockDonut",["BUY","HOLD","SELL"],
+    [counts.BUY,counts.HOLD,counts.SELL],
+    ["#064e3b","#1c1917","#450a0a"]);
+
+  // Portfolio value over time
+  const portRows=rows.filter(r=>r.ticker==="NVDA"&&r.portfolio_value);
+  lineChart("portfolioChart",
+    portRows.map(r=>(r.timestamp||"").slice(5,16)),
+    [{label:"Portfolio $",data:portRows.map(r=>parseFloat(r.portfolio_value||100000)),
+      borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.06)",fill:true}]
+  );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-async function init() {
-  document.getElementById("last-updated").textContent = "Loading data from GitHub...";
+function renderTrades(crypto,stocks){
+  const cryptoTrades=crypto.filter(r=>parseFloat(r.trade_qty||r.trade_eth||0)>0);
+  const stockTrades =stocks.filter(r=>parseFloat(r.trade_shares||0)>0);
+  const allTrades   =[...cryptoTrades,...stockTrades].sort((a,b)=>
+    (a.timestamp||"").localeCompare(b.timestamp||""));
 
-  const [ethRows, stockRows] = await Promise.all([
+  if(allTrades.length===0){
+    document.getElementById("trade-history").innerHTML=
+      `<div style="color:#475569;font-size:13px;padding:20px 0">No executed trades yet — Claude has been conservative (mostly HOLD signals). Trades will appear here when BUY/SELL signals fire with sufficient confidence.</div>`;
+    return;
+  }
+
+  document.getElementById("trade-history").innerHTML=allTrades.map(r=>{
+    const isCrypto=!!r.product;
+    const ticker  =r.product||r.ticker||"?";
+    const qty     =parseFloat(r.trade_qty||r.trade_eth||r.trade_shares||0);
+    const eur     =parseFloat(r.trade_eur||r.trade_usd||0);
+    const pnl     =parseFloat(r.trade_pnl||0);
+    const note    =r.trade_note||"";
+    return`<div class="trade-row">
+      ${badge(r.action)}
+      <span style="color:#f8fafc;min-width:80px">${ticker}</span>
+      <span style="color:#94a3b8">${qty.toFixed(4)} ${isCrypto?"units":"shares"}</span>
+      <span style="color:#94a3b8">@ ${isCrypto?"€":"$"}${parseFloat(r.price||0).toFixed(2)}</span>
+      <span style="color:#94a3b8">= ${isCrypto?"€":"$"}${eur.toFixed(2)}</span>
+      ${pnl?`<span class="${pnl>=0?"pos":"neg"}">P&L €${pnl>=0?"+":""}${pnl.toFixed(2)}</span>`:""}
+      <span style="color:#475569;margin-left:auto">${(r.timestamp||"").slice(0,16)}</span>
+    </div>
+    <div style="font-size:10px;color:#475569;padding:2px 0 4px 48px">${note}</div>`;
+  }).join("");
+}
+
+async function init(){
+  document.getElementById("updated").textContent="Loading data from GitHub...";
+  const[crypto,stocks]=await Promise.all([
     fetchCSV("coinbase_trade_log.csv"),
     fetchCSV("alpaca_trade_log.csv"),
   ]);
 
-  const errArea = document.getElementById("error-area");
+  const err=document.getElementById("errors");
+  if(!crypto||crypto.length===0)
+    err.innerHTML+=`<div class="err">⚠ Could not load coinbase_trade_log.csv</div>`;
+  if(!stocks||stocks.length===0)
+    err.innerHTML+=`<div class="err">⚠ Could not load alpaca_trade_log.csv</div>`;
 
-  if (!ethRows || ethRows.length === 0) {
-    errArea.innerHTML += `<div class="error-msg">⚠ Could not load coinbase_trade_log.csv — make sure GitHub Pages is enabled and the file exists.</div>`;
-  }
-  if (!stockRows || stockRows.length === 0) {
-    errArea.innerHTML += `<div class="error-msg">⚠ Could not load alpaca_trade_log.csv — make sure the file exists in your repository.</div>`;
-  }
+  const c=crypto||[];
+  const s=stocks||[];
 
-  const eth   = ethRows   || [];
-  const stock = stockRows || [];
+  renderSummary(c,s);
+  if(c.length)renderCrypto(c);
+  if(s.length)renderStocks(s);
+  renderTrades(c,s);
 
-  renderSummary(eth, stock);
-  if (eth.length)   renderEth(eth);
-  if (stock.length) renderStocks(stock);
-
-  const now = new Date().toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
-  document.getElementById("last-updated").textContent = `Last refreshed: ${now} — refreshes on page reload`;
+  const now=new Date().toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"});
+  document.getElementById("updated").textContent=`Updated: ${now} — reload to refresh`;
 }
 
 init();
