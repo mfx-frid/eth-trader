@@ -1,6 +1,11 @@
 {
-  "eur_balance": 1000.0,
-  "holdings": {},
-  "total_trades": 0,
+  "eur_balance": 790.0,
+  "holdings": {
+    "SOL-EUR": {
+      "qty": 1.440033,
+      "avg_buy": 72.915
+    }
+  },
+  "total_trades": 2,
   "total_pnl": 0.0
 }
