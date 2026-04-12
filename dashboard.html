@@ -254,12 +254,12 @@ function renderSummary(crypto,stocks){
   const lastC=crypto[crypto.length-1]||{};
   const lastS=stocks[stocks.length-1]||{};
 
-  // Crypto portfolio value estimate
-  const cryptoBalance=parseFloat(lastC.paper_eur_balance||1000);
-  const cryptoPnl=parseFloat(lastC.paper_total_pnl||0);
+  // Crypto portfolio — handle both old (paper_eur) and new (paper_eur_balance) column names
+  const cryptoBalance=parseFloat(lastC.paper_eur_balance||lastC.paper_eur||1000)||1000;
+  const cryptoPnl=parseFloat(lastC.paper_total_pnl||0)||0;
 
-  // Stock portfolio
-  const portVal=parseFloat(lastS.portfolio_value||100000);
+  // Stock portfolio — handle both old and new column names
+  const portVal=parseFloat(lastS.portfolio_value||lastS.buying_power||100000)||100000;
   const portPnl=portVal-100000;
 
   // Signal counts
