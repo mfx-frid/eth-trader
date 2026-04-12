@@ -2,7 +2,7 @@ name: Stock Trader
 
 on:
   schedule:
-    - cron: '30 * * * *'  # runs every hour at :30
+    - cron: '30 8,12,16,20 * * 1-5'  # 4x per day, Mon-Fri only
   workflow_dispatch:
 
 env:
@@ -31,12 +31,12 @@ jobs:
           ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
           ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python alpaca_trader.py
+        run: python alpaca_trader_v2.py
 
-      - name: Save CSV log to repository
+      - name: Save CSV log
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add alpaca_trade_log.csv
-          git diff --staged --quiet || git commit -m "Alpaca log $(date -u '+%Y-%m-%d %H:%M')"
+          git diff --staged --quiet || git commit -m "Stock log $(date -u '+%Y-%m-%d %H:%M')"
           git push
