@@ -1,8 +1,8 @@
-name: ETH Trader
+name: Crypto Trader
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 */2 * * *'  # every 2 hours, 24/7
   workflow_dispatch:
 
 env:
@@ -26,17 +26,17 @@ jobs:
       - name: Install dependencies
         run: pip install anthropic yfinance cryptography pyjwt requests
 
-      - name: Run trader
+      - name: Run crypto trader
         env:
           COINBASE_API_KEY:    ${{ secrets.COINBASE_API_KEY }}
           COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
           ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
         run: python coinbase_trader_v3.py
 
-      - name: Save CSV log to repository
+      - name: Save CSV log
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add coinbase_trade_log.csv
-          git diff --staged --quiet || git commit -m "Log update $(date -u '+%Y-%m-%d %H:%M')"
+          git diff --staged --quiet || git commit -m "Crypto log $(date -u '+%Y-%m-%d %H:%M')"
           git push
