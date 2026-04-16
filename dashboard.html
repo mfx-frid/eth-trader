@@ -11,22 +11,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 h1{font-size:20px;font-weight:500;color:#f8fafc;margin-bottom:2px}
 .sub{font-size:12px;color:#475569;margin-bottom:20px}
 .section{font-size:11px;font-weight:500;color:#64748b;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.06em}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:4px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:4px}
 .card{background:#1e2330;border:.5px solid #2d3748;border-radius:10px;padding:14px}
 .card-label{font-size:11px;color:#64748b;margin-bottom:5px}
-.card-value{font-size:20px;font-weight:500;color:#f8fafc}
+.card-value{font-size:18px;font-weight:500;color:#f8fafc}
 .card-sub{font-size:11px;color:#64748b;margin-top:3px}
 .pos{color:#34d399}.neg{color:#f87171}.neu{color:#94a3b8}
 .chart-card{background:#1e2330;border:.5px solid #2d3748;border-radius:10px;padding:16px;margin-bottom:10px}
-.chart-title{font-size:12px;color:#64748b;margin-bottom:12px}
+.chart-title{font-size:12px;color:#64748b;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
 .chart-wrap{position:relative;height:180px}
-.chart-wrap-sm{position:relative;height:140px}
+.chart-wrap-sm{position:relative;height:150px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+/* Main tabs */
 .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
 .tab{padding:5px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:.5px solid #2d3748;background:transparent;color:#64748b;transition:all .15s}
 .tab.active{background:#2d3748;color:#f8fafc;border-color:#4a5568}
-.sig-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:.5px solid #1e2330;font-size:12px}
+/* Chart switcher pills */
+.switcher{display:flex;gap:4px;flex-wrap:wrap}
+.pill{padding:3px 10px;border-radius:12px;font-size:10px;cursor:pointer;border:.5px solid #2d3748;background:transparent;color:#64748b;transition:all .15s}
+.pill.active{background:#334155;color:#f8fafc;border-color:#4a5568}
+/* Signal rows */
+.sig-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:.5px solid #1a2030;font-size:12px}
 .sig-row:last-child{border-bottom:none}
 .badge{padding:2px 8px;border-radius:12px;font-size:10px;font-weight:500;min-width:40px;text-align:center;flex-shrink:0}
 .b-buy{background:#064e3b;color:#34d399}
@@ -34,20 +40,35 @@ h1{font-size:20px;font-weight:500;color:#f8fafc;margin-bottom:2px}
 .b-hold{background:#1c1917;color:#78716c}
 .sig-ticker{font-weight:500;color:#f8fafc;min-width:72px;flex-shrink:0}
 .sig-price{color:#94a3b8;min-width:80px;flex-shrink:0}
-.sig-conf{color:#64748b;min-width:30px;flex-shrink:0}
+.sig-chg{min-width:48px;flex-shrink:0;font-size:11px}
+.sig-conf{color:#64748b;min-width:30px;flex-shrink:0;font-size:11px}
 .sig-time{color:#475569;font-size:10px;margin-left:auto;flex-shrink:0}
-.sig-reason{font-size:11px;color:#475569;margin-top:2px;line-height:1.4;grid-column:1/-1}
-.rsi-wrap{display:flex;align-items:center;gap:8px;margin:4px 0}
+.sig-reason{font-size:11px;color:#475569;margin-top:3px;line-height:1.4;padding-left:48px}
+.sig-why{font-size:10px;color:#334155;margin-top:2px;padding-left:48px;font-style:italic}
+/* RSI bars */
+.rsi-wrap{display:flex;align-items:center;gap:8px;margin:5px 0}
 .rsi-lbl{font-size:11px;color:#94a3b8;min-width:72px}
-.rsi-bg{flex:1;height:5px;background:#2d3748;border-radius:3px;overflow:hidden}
-.rsi-fill{height:100%;border-radius:3px}
-.rsi-val{font-size:11px;color:#64748b;min-width:28px;text-align:right}
-.mkt-open{color:#34d399;font-size:11px}
-.mkt-closed{color:#f87171;font-size:11px}
-.err{background:#450a0a;border:.5px solid #7f1d1d;border-radius:8px;padding:10px 14px;font-size:12px;color:#fca5a5;margin-bottom:12px}
-.trade-row{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:.5px solid #1e2330;font-size:11px}
+.rsi-zone{font-size:10px;min-width:60px;text-align:right}
+.rsi-bg{flex:1;height:6px;background:#2d3748;border-radius:3px;overflow:hidden;position:relative}
+.rsi-fill{height:100%;border-radius:3px;transition:width .4s}
+.rsi-mark{position:absolute;top:-2px;height:10px;width:1px;background:#475569;opacity:.5}
+.rsi-val{font-size:11px;min-width:28px;text-align:right}
+/* Buy signal indicator */
+.signal-meter{margin:8px 0 4px}
+.signal-meter-label{font-size:10px;color:#475569;margin-bottom:4px}
+.signal-meter-bar{height:4px;background:#1e2330;border-radius:2px;overflow:hidden;position:relative}
+.signal-meter-fill{height:100%;border-radius:2px;transition:width .4s}
+/* Trade rows */
+.trade-row{padding:8px 0;border-bottom:.5px solid #1a2030;font-size:12px}
 .trade-row:last-child{border-bottom:none}
+.trade-main{display:flex;gap:8px;align-items:center}
+.trade-note{font-size:10px;color:#475569;margin-top:3px;padding-left:48px}
+.err{background:#450a0a;border:.5px solid #7f1d1d;border-radius:8px;padding:10px 14px;font-size:12px;color:#fca5a5;margin-bottom:12px}
 .load{text-align:center;padding:40px;color:#475569;font-size:13px}
+.tag{padding:2px 7px;border-radius:8px;font-size:10px;background:#1a2030;color:#64748b;margin-left:4px}
+.tag-overbought{background:#450a0a;color:#f87171}
+.tag-oversold{background:#064e3b;color:#34d399}
+.tag-neutral{background:#1c1917;color:#78716c}
 @media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -57,34 +78,33 @@ h1{font-size:20px;font-weight:500;color:#f8fafc;margin-bottom:2px}
 <div id="errors"></div>
 
 <div class="section">Portfolio overview</div>
-<div class="cards" id="summary-cards"><div class="load">Fetching data...</div></div>
+<div class="cards" id="summary-cards"><div class="load">Fetching...</div></div>
 
 <div class="section">Analysis</div>
 <div class="tabs">
-  <button class="tab active" onclick="showTab('crypto')">🔵 Crypto (6)</button>
-  <button class="tab" onclick="showTab('stocks')">📈 Stocks (6)</button>
-  <button class="tab" onclick="showTab('trades')">📋 Trade history</button>
+  <button class="tab active" onclick="showTab('crypto')">🔵 Crypto</button>
+  <button class="tab" onclick="showTab('stocks')">📈 Stocks</button>
+  <button class="tab" onclick="showTab('trades')">📋 Trades</button>
 </div>
 
 <!-- CRYPTO TAB -->
 <div id="tab-crypto">
-  <div class="grid2">
-    <div class="chart-card">
-      <div class="chart-title">ETH-EUR price — last 24 signals</div>
-      <div class="chart-wrap"><canvas id="ethChart"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">BTC-EUR price — last 24 signals</div>
-      <div class="chart-wrap"><canvas id="btcChart"></canvas></div>
-    </div>
-  </div>
+  <!-- Switchable price chart -->
   <div class="chart-card">
-    <div class="chart-title">RSI-14 — all crypto pairs (latest)</div>
-    <div id="crypto-rsi"></div>
+    <div class="chart-title">
+      <span id="crypto-chart-title">Price chart</span>
+      <div class="switcher" id="crypto-switcher"></div>
+    </div>
+    <div class="chart-wrap"><canvas id="cryptoPriceChart"></canvas></div>
+  </div>
+  <!-- RSI with signal strength -->
+  <div class="chart-card">
+    <div class="chart-title">RSI-14 + signal strength — all pairs</div>
+    <div id="crypto-rsi-panel"></div>
   </div>
   <div class="grid2">
     <div class="chart-card">
-      <div class="chart-title">Latest crypto signals</div>
+      <div class="chart-title">Latest signals</div>
       <div id="crypto-signals"><div class="load">Loading...</div></div>
     </div>
     <div class="chart-card">
@@ -96,23 +116,20 @@ h1{font-size:20px;font-weight:500;color:#f8fafc;margin-bottom:2px}
 
 <!-- STOCKS TAB -->
 <div id="tab-stocks" style="display:none">
-  <div class="grid2">
-    <div class="chart-card">
-      <div class="chart-title">NVDA price — last 20 signals</div>
-      <div class="chart-wrap"><canvas id="nvdaChart"></canvas></div>
+  <div class="chart-card">
+    <div class="chart-title">
+      <span id="stock-chart-title">Price chart</span>
+      <div class="switcher" id="stock-switcher"></div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">TSLA price — last 20 signals</div>
-      <div class="chart-wrap"><canvas id="tslaChart"></canvas></div>
-    </div>
+    <div class="chart-wrap"><canvas id="stockPriceChart"></canvas></div>
   </div>
   <div class="chart-card">
-    <div class="chart-title">RSI-14 — all stocks (latest)</div>
-    <div id="stock-rsi"></div>
+    <div class="chart-title">RSI-14 + signal strength — all stocks</div>
+    <div id="stock-rsi-panel"></div>
   </div>
   <div class="grid2">
     <div class="chart-card">
-      <div class="chart-title">Latest stock signals</div>
+      <div class="chart-title">Latest signals</div>
       <div id="stock-signals"><div class="load">Loading...</div></div>
     </div>
     <div class="chart-card">
@@ -135,10 +152,7 @@ h1{font-size:20px;font-weight:500;color:#f8fafc;margin-bottom:2px}
 </div>
 
 <script>
-const USER   = "mfx-frid";
-const REPO   = "eth-trader";
-const BRANCH = "main";
-
+const USER="mfx-frid",REPO="eth-trader",BRANCH="main";
 function csvUrl(f){return`https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/${f}?t=${Date.now()}`}
 
 function parseCSV(text){
@@ -147,11 +161,7 @@ function parseCSV(text){
   const headers=lines[0].split(",").map(h=>h.trim().replace(/"/g,""));
   return lines.slice(1).map(line=>{
     const vals=[];let cur="",inQ=false;
-    for(const ch of line){
-      if(ch==='"'){inQ=!inQ}
-      else if(ch===","&&!inQ){vals.push(cur.trim());cur=""}
-      else{cur+=ch}
-    }
+    for(const ch of line){if(ch==='"'){inQ=!inQ}else if(ch===","&&!inQ){vals.push(cur.trim());cur=""}else{cur+=ch}}
     vals.push(cur.trim());
     const obj={};
     headers.forEach((h,i)=>obj[h]=(vals[i]||"").replace(/"/g,""));
@@ -159,12 +169,13 @@ function parseCSV(text){
   });
 }
 
-async function fetchCSV(file){
-  try{
-    const r=await fetch(csvUrl(file));
-    if(!r.ok)throw new Error(`HTTP ${r.status}`);
-    return parseCSV(await r.text());
-  }catch(e){return null}
+async function fetchCSV(f){
+  try{const r=await fetch(csvUrl(f));if(!r.ok)throw new Error();return parseCSV(await r.text())}
+  catch{return null}
+}
+async function fetchJSON(f){
+  try{const r=await fetch(csvUrl(f));if(!r.ok)throw new Error();return await r.json()}
+  catch{return null}
 }
 
 Chart.defaults.color="#64748b";
@@ -172,20 +183,22 @@ Chart.defaults.borderColor="#2d3748";
 Chart.defaults.font.family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
 Chart.defaults.font.size=10;
 
-function lineChart(id,labels,datasets){
+let cryptoChart=null, stockChart=null;
+
+function makeLineChart(id,labels,datasets){
   const ctx=document.getElementById(id);
-  if(!ctx)return;
+  if(!ctx)return null;
   return new Chart(ctx,{
     type:"line",
     data:{labels,datasets},
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:datasets.length>1,labels:{boxWidth:10,padding:8}}},
+      plugins:{legend:{display:true,labels:{boxWidth:10,padding:8}}},
       scales:{
-        x:{grid:{color:"#1a2030"},ticks:{maxTicksLimit:6}},
+        x:{grid:{color:"#1a2030"},ticks:{maxTicksLimit:8}},
         y:{grid:{color:"#2d3748"}}
       },
-      elements:{point:{radius:1.5},line:{tension:0.3,borderWidth:1.5}}
+      elements:{point:{radius:2},line:{tension:0.3,borderWidth:1.5}}
     }
   });
 }
@@ -196,14 +209,69 @@ function donut(id,labels,data,colors){
   new Chart(ctx,{
     type:"doughnut",
     data:{labels,datasets:[{data,backgroundColor:colors,borderColor:["#34d399","#78716c","#f87171"],borderWidth:1}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{boxWidth:10,padding:6}}},cutout:"60%"}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{boxWidth:10,padding:6}}},cutout:"62%"}
   });
 }
 
 function rsiColor(v){
   if(v>=70)return"#f87171";
   if(v<=30)return"#34d399";
-  return"#60a5fa";
+  if(v>=60)return"#fb923c";
+  if(v<=40)return"#60a5fa";
+  return"#94a3b8";
+}
+
+function rsiZone(v){
+  if(v>=70)return["Overbought","tag-overbought"];
+  if(v<=30)return["Oversold","tag-oversold"];
+  if(v>=60)return["Elevated","tag-neutral"];
+  if(v<=40)return["Cooling","tag-neutral"];
+  return["Neutral","tag-neutral"];
+}
+
+// Signal strength: how close to a BUY signal (0-100)
+// Best entry: RSI 30-45, price near/below SMA14, positive momentum
+function signalStrength(r){
+  const rsi=parseFloat(r.rsi_14||50);
+  const price=parseFloat(r.price||0);
+  const sma14=parseFloat(r.sma_14||price);
+  const chg=parseFloat(r.change_7d_pct||0);
+
+  // RSI score: best at 35, worst at 70+
+  let rsiScore=0;
+  if(rsi<=30)rsiScore=85;
+  else if(rsi<=40)rsiScore=75;
+  else if(rsi<=50)rsiScore=55;
+  else if(rsi<=60)rsiScore=35;
+  else if(rsi<=70)rsiScore=15;
+  else rsiScore=5;
+
+  // Price vs SMA14 score: below SMA14 = better entry
+  const priceDiff=((price-sma14)/sma14)*100;
+  let smaScore=0;
+  if(priceDiff<-3)smaScore=80;
+  else if(priceDiff<0)smaScore=60;
+  else if(priceDiff<2)smaScore=40;
+  else if(priceDiff<5)smaScore=20;
+  else smaScore=5;
+
+  // Momentum score: slight positive momentum preferred
+  let momScore=0;
+  if(chg>0&&chg<5)momScore=60;
+  else if(chg>=5&&chg<10)momScore=40;
+  else if(chg>=10)momScore=20;
+  else if(chg<0&&chg>-5)momScore=50;
+  else momScore=30;
+
+  const score=Math.round(rsiScore*0.5+smaScore*0.35+momScore*0.15);
+  return Math.min(100,Math.max(0,score));
+}
+
+function signalStrengthLabel(score){
+  if(score>=70)return["Strong buy zone","#34d399"];
+  if(score>=50)return["Watch closely","#60a5fa"];
+  if(score>=30)return["Neutral","#94a3b8"];
+  return["Not ready","#475569"];
 }
 
 function badge(a){
@@ -216,281 +284,356 @@ function showTab(name){
     document.getElementById(`tab-${t}`).style.display=t===name?"":"none";
   });
   document.querySelectorAll(".tab").forEach((t,i)=>{
-    const names=["crypto","stocks","trades"];
-    t.classList.toggle("active",names[i]===name);
+    t.classList.toggle("active",["crypto","stocks","trades"][i]===name);
   });
 }
 
-function rsiBar(label,rsi){
-  const c=rsiColor(rsi);
-  return`<div class="rsi-wrap">
-    <span class="rsi-lbl">${label}</span>
-    <div class="rsi-bg"><div class="rsi-fill" style="width:${Math.min(rsi,100)}%;background:${c}"></div></div>
-    <span class="rsi-val" style="color:${c}">${rsi.toFixed(1)}</span>
-  </div>`;
+// ── Switchable price chart ────────────────────────────────────────────────────
+
+function buildSwitcher(containerId, tickers, data, chartId, titleId, prefix, colorMap){
+  const container=document.getElementById(containerId);
+  container.innerHTML=tickers.map((t,i)=>
+    `<button class="pill${i===0?' active':''}" onclick="switchChart('${containerId}','${chartId}','${titleId}','${t}',${JSON.stringify(data)}.filter(r=>r.product===t||r.ticker===t),'${prefix}','${colorMap[t]}')">${t.replace('-EUR','').replace('-USD','')}</button>`
+  ).join('');
 }
 
-function sigRow(r,idField,pricePrefix){
-  const ticker=r[idField]||"?";
-  const price=parseFloat(r.price||0).toFixed(ticker.includes("BTC")?2:4);
-  const chg=parseFloat(r.change_7d_pct||0);
-  const chgStr=(chg>=0?"+":"")+chg.toFixed(1)+"%";
-  const chgCls=chg>=0?"pos":"neg";
-  const reason=(r.reasoning||"").slice(0,100)+(r.reasoning&&r.reasoning.length>100?"…":"");
-  return`<div>
-    <div class="sig-row">
-      ${badge(r.action)}
-      <span class="sig-ticker">${ticker}</span>
-      <span class="sig-price">${pricePrefix}${price}</span>
-      <span class="sig-conf ${chgCls}">${chgStr}</span>
-      <span class="sig-conf">${r.confidence||0}/10</span>
-      <span class="sig-time">${(r.timestamp||"").slice(5,16)}</span>
-    </div>
-    ${reason?`<div class="sig-reason">${reason}</div>`:""}
-  </div>`;
+function switchChart(switcherId, chartId, titleId, ticker, rows, prefix, color){
+  // Update pills
+  document.querySelectorAll(`#${switcherId} .pill`).forEach(p=>{
+    p.classList.toggle('active', p.textContent===ticker.replace('-EUR','').replace('-USD',''));
+  });
+  document.getElementById(titleId).textContent=`${ticker} — price & SMA`;
+
+  const labels=rows.map(r=>(r.timestamp||'').slice(5,16));
+  const prices=rows.map(r=>parseFloat(r.price||0));
+  const sma7  =rows.map(r=>parseFloat(r.sma_7||0));
+  const sma14 =rows.map(r=>parseFloat(r.sma_14||0));
+
+  // Destroy and recreate
+  const existing=Chart.getChart(chartId);
+  if(existing)existing.destroy();
+
+  const ctx=document.getElementById(chartId);
+  new Chart(ctx,{
+    type:"line",
+    data:{labels,datasets:[
+      {label:"Price",data:prices,borderColor:color,backgroundColor:color.replace(')',',0.06)').replace('rgb','rgba'),fill:true,borderWidth:1.5,pointRadius:2},
+      {label:"SMA-7",data:sma7,borderColor:"#f59e0b",borderDash:[3,3],borderWidth:1,pointRadius:0},
+      {label:"SMA-14",data:sma14,borderColor:"#8b5cf6",borderDash:[5,5],borderWidth:1,pointRadius:0},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{boxWidth:10,padding:8}}},
+      scales:{x:{grid:{color:"#1a2030"},ticks:{maxTicksLimit:8}},y:{grid:{color:"#2d3748"}}},
+      elements:{line:{tension:0.3}}
+    }
+  });
 }
 
-function renderSummary(crypto,stocks,portfolio){
-  const lastC=crypto[crypto.length-1]||{};
+// ── RSI panel with signal strength ───────────────────────────────────────────
+
+function rsiPanel(containerId, tickers, latest, prefix){
+  document.getElementById(containerId).innerHTML = tickers.map(t=>{
+    const r=latest[t];
+    if(!r)return'';
+    const rsi=parseFloat(r.rsi_14||50);
+    const [zone,zoneClass]=rsiZone(rsi);
+    const strength=signalStrength(r);
+    const [strengthLabel,strengthColor]=signalStrengthLabel(strength);
+    const price=parseFloat(r.price||0);
+    const sma14=parseFloat(r.sma_14||price);
+    const pctFromSma14=(((price-sma14)/sma14)*100).toFixed(1);
+    const chg=parseFloat(r.change_7d_pct||0);
+
+    return`<div style="margin-bottom:12px">
+      <div class="rsi-wrap">
+        <span class="rsi-lbl">${t.replace('-EUR','')}</span>
+        <div class="rsi-bg">
+          <div class="rsi-fill" style="width:${Math.min(rsi,100)}%;background:${rsiColor(rsi)}"></div>
+          <div class="rsi-mark" style="left:30%"></div>
+          <div class="rsi-mark" style="left:70%"></div>
+        </div>
+        <span class="rsi-val" style="color:${rsiColor(rsi)}">${rsi.toFixed(1)}</span>
+        <span class="tag ${zoneClass}">${zone}</span>
+      </div>
+      <div style="display:flex;gap:16px;padding-left:80px;margin-top:4px">
+        <div class="signal-meter" style="flex:1">
+          <div class="signal-meter-label">Buy signal strength: <span style="color:${strengthColor}">${strengthLabel}</span> (${strength}%)</div>
+          <div class="signal-meter-bar">
+            <div class="signal-meter-fill" style="width:${strength}%;background:${strengthColor}"></div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:#475569;text-align:right;white-space:nowrap">
+          vs SMA-14: <span class="${pctFromSma14<0?'pos':'neg'}">${pctFromSma14>0?'+':''}${pctFromSma14}%</span>
+          &nbsp;|&nbsp; 7d: <span class="${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(1)}%</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Signal rows ───────────────────────────────────────────────────────────────
+
+function sigRows(containerId, tickers, latest, prefix){
+  document.getElementById(containerId).innerHTML = tickers.map(t=>{
+    const r=latest[t];
+    if(!r)return'';
+    const price=parseFloat(r.price||0);
+    const chg=parseFloat(r.change_7d_pct||0);
+    const strength=signalStrength(r);
+    const [strengthLabel,strengthColor]=signalStrengthLabel(strength);
+    const reason=(r.reasoning||'').slice(0,110)+((r.reasoning||'').length>110?'…':'');
+
+    // What would trigger a buy
+    const rsi=parseFloat(r.rsi_14||50);
+    let trigger='';
+    if(rsi>60)trigger=`RSI needs to drop below 55 (currently ${rsi.toFixed(0)})`;
+    else if(rsi>50)trigger=`RSI cooling nicely — watch for drop to 45`;
+    else if(rsi<30)trigger=`Oversold — wait for RSI to stabilize above 30`;
+    else trigger=`RSI good — watch for positive momentum confirmation`;
+
+    return`<div>
+      <div class="sig-row">
+        ${badge(r.action)}
+        <span class="sig-ticker">${t.replace('-EUR','')}</span>
+        <span class="sig-price">${prefix}${price.toFixed(t.includes('BTC')||t.includes('META')||t.includes('TSLA')||t.includes('NVDA')||t.includes('AAPL')||t.includes('AMD')||t.includes('COIN')?2:4)}</span>
+        <span class="sig-chg ${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(1)}%</span>
+        <span class="sig-conf">${r.confidence||0}/10</span>
+        <span class="sig-time">${(r.timestamp||'').slice(5,16)}</span>
+      </div>
+      <div class="sig-reason">${reason}</div>
+      <div class="sig-why">📍 Next buy trigger: ${trigger}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Summary cards ─────────────────────────────────────────────────────────────
+
+function renderSummary(crypto, stocks, portfolio){
   const lastS=stocks[stocks.length-1]||{};
-
-  // Crypto balance — prefer live JSON, fall back to CSV
-  const cryptoBalance = portfolio
-    ? parseFloat(portfolio.eur_balance||1000)
-    : parseFloat(lastC.paper_eur_balance||lastC.paper_eur||1000)||1000;
-  const cryptoPnl = portfolio
-    ? parseFloat(portfolio.total_pnl||0)
-    : parseFloat(lastC.paper_total_pnl||0)||0;
-
-  // Open positions from JSON
-  const holdings = portfolio?.holdings || {};
-  const openPositions = Object.entries(holdings)
-    .filter(([,h])=>parseFloat(h.qty||0)>0);
-
-  // Latest prices for unrealised P&L
   const latestPrices={};
   crypto.forEach(r=>{latestPrices[r.product]=parseFloat(r.price||0)});
 
-  const unrealised = openPositions.reduce((sum,[product,h])=>{
-    const cur=latestPrices[product]||h.avg_buy;
-    return sum + (cur - h.avg_buy) * h.qty;
+  const eurBalance=portfolio?parseFloat(portfolio.eur_balance||1000):1000;
+  const holdings=portfolio?.holdings||{};
+  const openPos=Object.entries(holdings).filter(([,h])=>parseFloat(h.qty||0)>0);
+
+  const unrealised=openPos.reduce((sum,[p,h])=>{
+    const cur=latestPrices[p]||h.avg_buy;
+    return sum+((cur-h.avg_buy)*h.qty);
+  },0);
+  const totalCrypto=eurBalance+openPos.reduce((sum,[p,h])=>{
+    return sum+(latestPrices[p]||h.avg_buy)*h.qty;
   },0);
 
-  const totalCryptoValue = cryptoBalance + openPositions.reduce((sum,[product,h])=>{
-    const cur=latestPrices[product]||h.avg_buy;
-    return sum + cur * h.qty;
-  },0);
-
-  // Stock portfolio
-  const portVal=parseFloat(lastS.portfolio_value||lastS.buying_power||100000)||100000;
+  const portVal=parseFloat(lastS.portfolio_value||100000)||100000;
   const portPnl=portVal-100000;
 
-  // Signal counts
-  const cBuy=crypto.filter(r=>r.action==="BUY").length;
-  const cHold=crypto.filter(r=>r.action==="HOLD").length;
-  const cSell=crypto.filter(r=>r.action==="SELL").length;
-  const sBuy=stocks.filter(r=>r.action==="BUY").length;
-  const sHold=stocks.filter(r=>r.action==="HOLD").length;
-  const sSell=stocks.filter(r=>r.action==="SELL").length;
+  const cBuy=crypto.filter(r=>r.action==='BUY').length;
+  const cHold=crypto.filter(r=>r.action==='HOLD').length;
+  const cSell=crypto.filter(r=>r.action==='SELL').length;
+  const sBuy=stocks.filter(r=>r.action==='BUY').length;
+  const sHold=stocks.filter(r=>r.action==='HOLD').length;
+  const sSell=stocks.filter(r=>r.action==='SELL').length;
 
-  const ethPrice=crypto.filter(r=>r.product==="ETH-EUR").slice(-1)[0]?.price||"—";
-  const btcPrice=crypto.filter(r=>r.product==="BTC-EUR").slice(-1)[0]?.price||"—";
+  const ethPrice=latestPrices['ETH-EUR']||0;
+  const btcPrice=latestPrices['BTC-EUR']||0;
 
-  // Build open positions HTML
-  const posHTML = openPositions.length > 0
-    ? openPositions.map(([product,h])=>{
-        const cur=latestPrices[product]||h.avg_buy;
-        const unreal=((cur-h.avg_buy)*h.qty);
-        const cls=unreal>=0?"pos":"neg";
-        return`<div class="card">
-          <div class="card-label">${product} held</div>
-          <div class="card-value" style="font-size:15px">${parseFloat(h.qty).toFixed(4)}</div>
-          <div class="card-sub">Avg €${parseFloat(h.avg_buy).toFixed(4)}</div>
-          <div class="card-sub ${cls}">Unreal €${unreal>=0?"+":""}${unreal.toFixed(2)}</div>
-        </div>`;
-      }).join("")
-    : "";
+  const posCards=openPos.map(([p,h])=>{
+    const cur=latestPrices[p]||h.avg_buy;
+    const unreal=(cur-h.avg_buy)*h.qty;
+    return`<div class="card">
+      <div class="card-label">${p.replace('-EUR','')} position</div>
+      <div class="card-value" style="font-size:14px">${parseFloat(h.qty).toFixed(4)}</div>
+      <div class="card-sub">Avg €${parseFloat(h.avg_buy).toFixed(3)}</div>
+      <div class="card-sub ${unreal>=0?'pos':'neg'}">€${unreal>=0?'+':''}${unreal.toFixed(2)} unreal</div>
+    </div>`;
+  }).join('');
 
-  document.getElementById("summary-cards").innerHTML=`
+  document.getElementById('summary-cards').innerHTML=`
     <div class="card">
       <div class="card-label">ETH-EUR</div>
-      <div class="card-value">€${parseFloat(ethPrice||0).toFixed(2)}</div>
+      <div class="card-value">€${ethPrice.toFixed(2)}</div>
       <div class="card-sub">Live price</div>
     </div>
     <div class="card">
       <div class="card-label">BTC-EUR</div>
-      <div class="card-value">€${parseFloat(btcPrice||0).toLocaleString()}</div>
+      <div class="card-value">€${btcPrice.toLocaleString()}</div>
       <div class="card-sub">Live price</div>
     </div>
     <div class="card">
-      <div class="card-label">Crypto EUR balance</div>
-      <div class="card-value">€${cryptoBalance.toFixed(2)}</div>
-      <div class="card-sub">of €1,000 starting</div>
+      <div class="card-label">Crypto EUR free</div>
+      <div class="card-value">€${eurBalance.toFixed(2)}</div>
+      <div class="card-sub">of €1,000 start</div>
     </div>
     <div class="card">
-      <div class="card-label">Crypto total value</div>
-      <div class="card-value">€${totalCryptoValue.toFixed(2)}</div>
-      <div class="card-sub ${unrealised>=0?"pos":"neg"}">Unreal €${unrealised>=0?"+":""}${unrealised.toFixed(2)}</div>
+      <div class="card-label">Crypto total</div>
+      <div class="card-value">€${totalCrypto.toFixed(2)}</div>
+      <div class="card-sub ${unrealised>=0?'pos':'neg'}">Unreal €${unrealised>=0?'+':''}${unrealised.toFixed(2)}</div>
     </div>
-    ${posHTML}
+    ${posCards}
     <div class="card">
       <div class="card-label">Stock portfolio</div>
       <div class="card-value">$${portVal.toLocaleString()}</div>
-      <div class="card-sub ${portPnl>=0?"pos":"neg"}">P&L $${portPnl>=0?"+":""}${portPnl.toFixed(2)}</div>
+      <div class="card-sub ${portPnl>=0?'pos':'neg'}">$${portPnl>=0?'+':''}${portPnl.toFixed(2)} P&L</div>
     </div>
     <div class="card">
       <div class="card-label">Crypto signals</div>
       <div class="card-value">${crypto.length}</div>
-      <div class="card-sub"><span class="pos">${cBuy}B</span> <span class="neu">${cHold}H</span> <span class="neg">${cSell}S</span></div>
+      <div class="card-sub"><span class="pos">${cBuy} BUY</span> · <span class="neu">${cHold} HOLD</span> · <span class="neg">${cSell} SELL</span></div>
     </div>
     <div class="card">
       <div class="card-label">Stock signals</div>
       <div class="card-value">${stocks.length}</div>
-      <div class="card-sub"><span class="pos">${sBuy}B</span> <span class="neu">${sHold}H</span> <span class="neg">${sSell}S</span></div>
+      <div class="card-sub"><span class="pos">${sBuy} BUY</span> · <span class="neu">${sHold} HOLD</span> · <span class="neg">${sSell} SELL</span></div>
     </div>`;
 }
 
-function renderCrypto(rows){
-  // ETH price chart
-  const eth=rows.filter(r=>r.product==="ETH-EUR").slice(-24);
-  const btc=rows.filter(r=>r.product==="BTC-EUR").slice(-24);
+// ── Trade history ─────────────────────────────────────────────────────────────
 
-  lineChart("ethChart",
-    eth.map(r=>(r.timestamp||"").slice(11,16)),
-    [{label:"ETH-EUR",data:eth.map(r=>parseFloat(r.price||0)),borderColor:"#60a5fa",backgroundColor:"rgba(96,165,250,0.06)",fill:true},
-     {label:"SMA-7",data:eth.map(r=>parseFloat(r.sma_7||0)),borderColor:"#f59e0b",borderDash:[3,3],pointRadius:0}]
-  );
-  lineChart("btcChart",
-    btc.map(r=>(r.timestamp||"").slice(11,16)),
-    [{label:"BTC-EUR",data:btc.map(r=>parseFloat(r.price||0)),borderColor:"#fb923c",backgroundColor:"rgba(251,146,60,0.06)",fill:true},
-     {label:"SMA-7",data:btc.map(r=>parseFloat(r.sma_7||0)),borderColor:"#f59e0b",borderDash:[3,3],pointRadius:0}]
-  );
+function renderTrades(crypto, stocks){
+  const cTrades=crypto.filter(r=>parseFloat(r.trade_qty||r.trade_eth||0)>0);
+  const sTrades=stocks.filter(r=>parseFloat(r.trade_shares||0)>0);
+  const all=[...cTrades,...sTrades].sort((a,b)=>(a.timestamp||'').localeCompare(b.timestamp||''));
 
-  // RSI bars — latest per product
-  const products=["ETH-EUR","BTC-EUR","SOL-EUR","XRP-EUR","LTC-EUR","DOGE-EUR"];
-  const latest={};
-  rows.forEach(r=>{latest[r.product]=r});
-  document.getElementById("crypto-rsi").innerHTML=
-    products.map(p=>rsiBar(p,parseFloat(latest[p]?.rsi_14||50))).join("");
-
-  // Latest signals — most recent per product
-  document.getElementById("crypto-signals").innerHTML=
-    products.map(p=>latest[p]?sigRow(latest[p],"product","€"):"").join("");
-
-  // Donut
-  const counts={BUY:0,HOLD:0,SELL:0};
-  rows.forEach(r=>{if(counts[r.action]!==undefined)counts[r.action]++});
-  donut("cryptoDonut",["BUY","HOLD","SELL"],
-    [counts.BUY,counts.HOLD,counts.SELL],
-    ["#064e3b","#1c1917","#450a0a"]);
-}
-
-function renderStocks(rows){
-  const nvda=rows.filter(r=>r.ticker==="NVDA").slice(-20);
-  const tsla=rows.filter(r=>r.ticker==="TSLA").slice(-20);
-
-  lineChart("nvdaChart",
-    nvda.map(r=>(r.timestamp||"").slice(11,16)),
-    [{label:"NVDA",data:nvda.map(r=>parseFloat(r.price||0)),borderColor:"#a78bfa",backgroundColor:"rgba(167,139,250,0.06)",fill:true},
-     {label:"SMA-7",data:nvda.map(r=>parseFloat(r.sma_7||0)),borderColor:"#f59e0b",borderDash:[3,3],pointRadius:0}]
-  );
-  lineChart("tslaChart",
-    tsla.map(r=>(r.timestamp||"").slice(11,16)),
-    [{label:"TSLA",data:tsla.map(r=>parseFloat(r.price||0)),borderColor:"#f87171",backgroundColor:"rgba(248,113,113,0.06)",fill:true},
-     {label:"SMA-7",data:tsla.map(r=>parseFloat(r.sma_7||0)),borderColor:"#f59e0b",borderDash:[3,3],pointRadius:0}]
-  );
-
-  // RSI bars
-  const tickers=["NVDA","AAPL","TSLA","META","AMD","COIN"];
-  const latest={};
-  rows.forEach(r=>{latest[r.ticker]=r});
-  document.getElementById("stock-rsi").innerHTML=
-    tickers.map(t=>rsiBar(t,parseFloat(latest[t]?.rsi_14||50))).join("");
-
-  // Latest signals
-  document.getElementById("stock-signals").innerHTML=
-    tickers.map(t=>latest[t]?sigRow(latest[t],"ticker","$"):"").join("");
-
-  // Donut
-  const counts={BUY:0,HOLD:0,SELL:0};
-  rows.forEach(r=>{if(counts[r.action]!==undefined)counts[r.action]++});
-  donut("stockDonut",["BUY","HOLD","SELL"],
-    [counts.BUY,counts.HOLD,counts.SELL],
-    ["#064e3b","#1c1917","#450a0a"]);
-
-  // Portfolio value over time
-  const portRows=rows.filter(r=>r.ticker==="NVDA"&&r.portfolio_value);
-  lineChart("portfolioChart",
-    portRows.map(r=>(r.timestamp||"").slice(5,16)),
-    [{label:"Portfolio $",data:portRows.map(r=>parseFloat(r.portfolio_value||100000)),
-      borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.06)",fill:true}]
-  );
-}
-
-function renderTrades(crypto,stocks){
-  const cryptoTrades=crypto.filter(r=>parseFloat(r.trade_qty||r.trade_eth||0)>0);
-  const stockTrades =stocks.filter(r=>parseFloat(r.trade_shares||0)>0);
-  const allTrades   =[...cryptoTrades,...stockTrades].sort((a,b)=>
-    (a.timestamp||"").localeCompare(b.timestamp||""));
-
-  if(allTrades.length===0){
-    document.getElementById("trade-history").innerHTML=
-      `<div style="color:#475569;font-size:13px;padding:20px 0">No executed trades yet — Claude has been conservative (mostly HOLD signals). Trades will appear here when BUY/SELL signals fire with sufficient confidence.</div>`;
+  if(!all.length){
+    document.getElementById('trade-history').innerHTML=
+      `<div style="color:#475569;font-size:13px;padding:16px 0">No executed trades yet — Claude has been conservative. SOL-EUR buys will appear once updated logs are uploaded. Trades appear here when BUY/SELL fires with confidence ≥7.</div>`;
     return;
   }
-
-  document.getElementById("trade-history").innerHTML=allTrades.map(r=>{
+  document.getElementById('trade-history').innerHTML=all.map(r=>{
     const isCrypto=!!r.product;
-    const ticker  =r.product||r.ticker||"?";
-    const qty     =parseFloat(r.trade_qty||r.trade_eth||r.trade_shares||0);
-    const eur     =parseFloat(r.trade_eur||r.trade_usd||0);
-    const pnl     =parseFloat(r.trade_pnl||0);
-    const note    =r.trade_note||"";
+    const ticker=r.product||r.ticker||'?';
+    const qty=parseFloat(r.trade_qty||r.trade_eth||r.trade_shares||0);
+    const val=parseFloat(r.trade_eur||r.trade_usd||0);
+    const pnl=parseFloat(r.trade_pnl||0);
     return`<div class="trade-row">
-      ${badge(r.action)}
-      <span style="color:#f8fafc;min-width:80px">${ticker}</span>
-      <span style="color:#94a3b8">${qty.toFixed(4)} ${isCrypto?"units":"shares"}</span>
-      <span style="color:#94a3b8">@ ${isCrypto?"€":"$"}${parseFloat(r.price||0).toFixed(2)}</span>
-      <span style="color:#94a3b8">= ${isCrypto?"€":"$"}${eur.toFixed(2)}</span>
-      ${pnl?`<span class="${pnl>=0?"pos":"neg"}">P&L €${pnl>=0?"+":""}${pnl.toFixed(2)}</span>`:""}
-      <span style="color:#475569;margin-left:auto">${(r.timestamp||"").slice(0,16)}</span>
-    </div>
-    <div style="font-size:10px;color:#475569;padding:2px 0 4px 48px">${note}</div>`;
-  }).join("");
+      <div class="trade-main">
+        ${badge(r.action)}
+        <span style="color:#f8fafc;min-width:80px">${ticker}</span>
+        <span style="color:#94a3b8">${qty.toFixed(4)} ${isCrypto?'units':'shares'}</span>
+        <span style="color:#94a3b8">@ ${isCrypto?'€':'$'}${parseFloat(r.price||0).toFixed(2)}</span>
+        <span style="color:#94a3b8">= ${isCrypto?'€':'$'}${val.toFixed(2)}</span>
+        ${pnl?`<span class="${pnl>=0?'pos':'neg'}">P&L ${isCrypto?'€':'$'}${pnl>=0?'+':''}${pnl.toFixed(2)}</span>`:''}
+        <span style="color:#475569;margin-left:auto;font-size:10px">${(r.timestamp||'').slice(0,16)}</span>
+      </div>
+      <div class="trade-note">${r.trade_note||''}</div>
+    </div>`;
+  }).join('');
 }
 
-async function fetchJSON(file){
-  try{
-    const r=await fetch(csvUrl(file));
-    if(!r.ok)throw new Error(`HTTP ${r.status}`);
-    return await r.json();
-  }catch(e){return null}
-}
+// ── Color maps ────────────────────────────────────────────────────────────────
+
+const cryptoColors={
+  'ETH-EUR':'rgb(96,165,250)',
+  'BTC-EUR':'rgb(251,146,60)',
+  'SOL-EUR':'rgb(167,139,250)',
+  'XRP-EUR':'rgb(52,211,153)',
+  'LTC-EUR':'rgb(248,113,113)',
+  'DOGE-EUR':'rgb(250,204,21)',
+};
+const stockColors={
+  'NVDA':'rgb(167,139,250)',
+  'AAPL':'rgb(96,165,250)',
+  'TSLA':'rgb(248,113,113)',
+  'META':'rgb(52,211,153)',
+  'AMD':'rgb(251,146,60)',
+  'COIN':'rgb(250,204,21)',
+};
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 async function init(){
-  document.getElementById("updated").textContent="Loading data from GitHub...";
+  document.getElementById('updated').textContent='Loading data from GitHub...';
   const[crypto,stocks,portfolio]=await Promise.all([
-    fetchCSV("coinbase_trade_log.csv"),
-    fetchCSV("alpaca_trade_log.csv"),
-    fetchJSON("crypto_portfolio.json"),
+    fetchCSV('coinbase_trade_log.csv'),
+    fetchCSV('alpaca_trade_log.csv'),
+    fetchJSON('crypto_portfolio.json'),
   ]);
 
-  const err=document.getElementById("errors");
-  if(!crypto||crypto.length===0)
-    err.innerHTML+=`<div class="err">⚠ Could not load coinbase_trade_log.csv</div>`;
-  if(!stocks||stocks.length===0)
-    err.innerHTML+=`<div class="err">⚠ Could not load alpaca_trade_log.csv</div>`;
+  const err=document.getElementById('errors');
+  if(!crypto||!crypto.length)err.innerHTML+=`<div class="err">⚠ Could not load coinbase_trade_log.csv</div>`;
+  if(!stocks||!stocks.length)err.innerHTML+=`<div class="err">⚠ Could not load alpaca_trade_log.csv</div>`;
 
-  const c=crypto||[];
-  const s=stocks||[];
+  const c=crypto||[], s=stocks||[];
+
+  // Latest per product
+  const cLatest={}, sLatest={};
+  c.forEach(r=>{cLatest[r.product]=r});
+  s.forEach(r=>{sLatest[r.ticker]=r});
+
+  const cryptoTickers=['ETH-EUR','BTC-EUR','SOL-EUR','XRP-EUR','LTC-EUR','DOGE-EUR'];
+  const stockTickers =['NVDA','AAPL','TSLA','META','AMD','COIN'];
 
   renderSummary(c,s,portfolio);
-  if(c.length)renderCrypto(c);
-  if(s.length)renderStocks(s);
+
+  // Crypto price chart — start with ETH
+  const ethRows=c.filter(r=>r.product==='ETH-EUR');
+  switchChart('crypto-switcher','cryptoPriceChart','crypto-chart-title','ETH-EUR',ethRows,'€',cryptoColors['ETH-EUR']);
+
+  // Build crypto switcher
+  const cSwitcher=document.getElementById('crypto-switcher');
+  cSwitcher.innerHTML=cryptoTickers.map((t,i)=>
+    `<button class="pill${i===0?' active':''}" onclick="
+      document.querySelectorAll('#crypto-switcher .pill').forEach(p=>p.classList.remove('active'));
+      this.classList.add('active');
+      switchChart('crypto-switcher','cryptoPriceChart','crypto-chart-title','${t}',
+        ${JSON.stringify(c)}.filter(r=>r.product==='${t}'),'€','${cryptoColors[t]}')
+    ">${t.replace('-EUR','')}</button>`
+  ).join('');
+
+  rsiPanel('crypto-rsi-panel', cryptoTickers, cLatest, '€');
+  sigRows('crypto-signals', cryptoTickers, cLatest, '€');
+
+  // Donut
+  const cCounts={BUY:0,HOLD:0,SELL:0};
+  c.forEach(r=>{if(cCounts[r.action]!==undefined)cCounts[r.action]++});
+  donut('cryptoDonut',['BUY','HOLD','SELL'],[cCounts.BUY,cCounts.HOLD,cCounts.SELL],['#064e3b','#1c1917','#450a0a']);
+
+  // Stock price chart — start with NVDA
+  const nvdaRows=s.filter(r=>r.ticker==='NVDA');
+  switchChart('stock-switcher','stockPriceChart','stock-chart-title','NVDA',nvdaRows,'$',stockColors['NVDA']);
+
+  // Build stock switcher
+  const sSwitcher=document.getElementById('stock-switcher');
+  sSwitcher.innerHTML=stockTickers.map((t,i)=>
+    `<button class="pill${i===0?' active':''}" onclick="
+      document.querySelectorAll('#stock-switcher .pill').forEach(p=>p.classList.remove('active'));
+      this.classList.add('active');
+      switchChart('stock-switcher','stockPriceChart','stock-chart-title','${t}',
+        ${JSON.stringify(s)}.filter(r=>r.ticker==='${t}'),'$','${stockColors[t]}')
+    ">${t}</button>`
+  ).join('');
+
+  rsiPanel('stock-rsi-panel', stockTickers, sLatest, '$');
+  sigRows('stock-signals', stockTickers, sLatest, '$');
+
+  const sCounts={BUY:0,HOLD:0,SELL:0};
+  s.forEach(r=>{if(sCounts[r.action]!==undefined)sCounts[r.action]++});
+  donut('stockDonut',['BUY','HOLD','SELL'],[sCounts.BUY,sCounts.HOLD,sCounts.SELL],['#064e3b','#1c1917','#450a0a']);
+
+  // Portfolio chart
+  const portRows=s.filter(r=>r.ticker==='NVDA'&&r.portfolio_value);
+  const existing=Chart.getChart('portfolioChart');
+  if(existing)existing.destroy();
+  const pCtx=document.getElementById('portfolioChart');
+  new Chart(pCtx,{
+    type:'line',
+    data:{
+      labels:portRows.map(r=>(r.timestamp||'').slice(5,16)),
+      datasets:[{label:'Portfolio $',data:portRows.map(r=>parseFloat(r.portfolio_value||100000)),
+        borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.06)',fill:true,borderWidth:1.5,pointRadius:2}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'#1a2030'},ticks:{maxTicksLimit:8}},y:{grid:{color:'#2d3748'}}},
+      elements:{line:{tension:0.3}}}
+  });
+
   renderTrades(c,s);
 
-  const now=new Date().toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"});
-  document.getElementById("updated").textContent=`Updated: ${now} — reload to refresh`;
+  const now=new Date().toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});
+  document.getElementById('updated').textContent=`Updated: ${now} — reload to refresh`;
 }
 
 init();
