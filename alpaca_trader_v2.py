@@ -353,7 +353,7 @@ Respond with JSON ONLY — no markdown fences:
 }}
 
 Rules:
-- BUY only if confidence >= {MIN_CONFIDENCE}
+- BUY only if confidence >= {MIN_CONFIDENCE} AND MACD hist > 0 (bullish momentum)
 - SELL only if currently holding the stock
 - When in doubt HOLD
 - Max position size is ${MAX_POSITION_USD}"""
@@ -389,6 +389,10 @@ def execute_trade(rec: dict, market: dict,
     if action == "BUY":
         if rec["confidence"] < MIN_CONFIDENCE:
             result["note"] = f"Confidence {rec['confidence']}/10 too low — skipped"
+            return result
+        mh = market.get("macd_hist")
+        if mh is not None and mh < 0:
+            result["note"] = f"MACD bearish (hist {mh:+.4f}) — don't fight trend"
             return result
         if len(positions) >= MAX_OPEN_TRADES:
             result["note"] = f"Max {MAX_OPEN_TRADES} positions reached — skipped"

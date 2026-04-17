@@ -297,7 +297,8 @@ def fill_pending_orders(portfolio: dict) -> list[dict]:
 
 def simulate_trade(action: str, confidence: int,
                    product: str, price: float,
-                   portfolio: dict) -> dict:
+                   portfolio: dict,
+                   macd_hist: float | None = None) -> dict:
     trade = {"action": action, "product": product,
              "price": price, "qty": 0.0,
              "eur_value": 0.0, "pnl": 0.0, "note": ""}
@@ -305,6 +306,9 @@ def simulate_trade(action: str, confidence: int,
     if action == "BUY":
         if confidence < MIN_CONFIDENCE:
             trade["note"] = f"Confidence {confidence}/10 below threshold"
+            return trade
+        if macd_hist is not None and macd_hist < 0:
+            trade["note"] = f"MACD bearish (hist {macd_hist:+.4f}) — don't fight trend"
             return trade
         if portfolio["eur_balance"] < 10:
             trade["note"] = "Insufficient paper balance"
@@ -439,7 +443,7 @@ Respond with JSON ONLY — no markdown fences:
   "time_horizon": "short-term (days)" | "medium-term (weeks)" | "long-term (months)"
 }}
 
-Rules: BUY only if confidence >= {MIN_CONFIDENCE}. SELL only if holding. When in doubt HOLD."""
+Rules: BUY only if confidence >= {MIN_CONFIDENCE} AND MACD hist > 0 (bullish momentum). SELL only if holding. When in doubt HOLD."""
 
 
 def call_claude(prompt: str) -> dict:
@@ -602,7 +606,8 @@ def main():
             rec   = call_claude(build_prompt(market, headlines, portfolio))
             trade = simulate_trade(
                 rec["action"], rec["confidence"],
-                product_id, market["current_price"], portfolio
+                product_id, market["current_price"], portfolio,
+                macd_hist=market.get("macd_hist"),
             )
             print_ticker_report(market, rec, trade)
             log_to_csv(market, rec, trade, portfolio)
