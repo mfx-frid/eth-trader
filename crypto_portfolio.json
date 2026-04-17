@@ -1,9 +1,9 @@
 {
-  "eur_balance": 820.71,
+  "eur_balance": 734.54,
   "holdings": {
     "SOL-EUR": {
-      "qty": 0.0,
-      "avg_buy": 0.0
+      "qty": 1.156473,
+      "avg_buy": 74.515
     },
     "DOGE-EUR": {
       "qty": 1048.672566,
@@ -14,6 +14,6 @@
       "avg_buy": 0.0
     }
   },
-  "total_trades": 6,
+  "total_trades": 7,
   "total_pnl": 8.66
 }
