@@ -11,6 +11,7 @@ Usage:
   py backtest.py --days 21           # 21-day window
   py backtest.py --ticker NVDA       # single ticker
   py backtest.py --type crypto       # crypto only
+  py backtest.py --sweep             # grid-search MIN_CONFIDENCE ∈ {5..9}
 """
 
 import argparse
@@ -19,7 +20,7 @@ import yfinance as yf
 # ── Strategy parameters (mirror live scripts) ────────────────────────────────
 START_CASH       = 10000.0
 MAX_POSITION     = 0.15
-MIN_CONFIDENCE   = 7
+MIN_CONFIDENCE   = 7          # mutable at runtime by --sweep
 TRAIL_PERCENT    = 3.0
 LADDER_STEPS_PCT = [0.0, 2.0, 4.0]
 WARMUP_DAYS      = 40  # need >=35 for MACD signal; 40 for margin
@@ -207,12 +208,40 @@ def run_backtest(ticker, days):
     return p
 
 
+def run_sweep(tickers, days):
+    global MIN_CONFIDENCE
+    print(f"\n{'='*66}")
+    print(f"  MIN_CONFIDENCE sweep  •  {days}d window  •  {len(tickers)} tickers")
+    print(f"{'='*66}\n")
+    print(f"  {'MinConf':>8}  {'Trades':>7}  {'Aggr P&L':>12}  {'Mean ROI':>10}")
+    print("  " + "-" * 46)
+    best = (None, float("-inf"))
+    for mc in (5, 6, 7, 8, 9):
+        MIN_CONFIDENCE = mc
+        total_pnl, total_n, rois = 0.0, 0, []
+        for t in tickers:
+            r = run_backtest(t, days)
+            if r is None:
+                continue
+            total_pnl += r["pnl"]
+            total_n   += len(r["trades"])
+            rois.append((r["cash"] - START_CASH) / START_CASH * 100)
+        mean_roi = sum(rois) / len(rois) if rois else 0.0
+        print(f"  {mc:>8}  {total_n:>7}  ${total_pnl:>+11.2f}  {mean_roi:>+9.2f}%")
+        if mean_roi > best[1]:
+            best = (mc, mean_roi)
+    print("  " + "-" * 46)
+    print(f"  Best: MIN_CONFIDENCE={best[0]}  (mean ROI {best[1]:+.2f}%)\n")
+
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", type=int, default=14, help="Backtest window (days)")
     ap.add_argument("--ticker", default=None, help="Single ticker (e.g. NVDA or ETH-USD)")
     ap.add_argument("--type", choices=["crypto", "stock", "all"], default="all")
+    ap.add_argument("--sweep", action="store_true",
+                    help="Grid-search MIN_CONFIDENCE ∈ {5..9} and report best")
     args = ap.parse_args()
 
     if args.ticker:
@@ -221,6 +250,10 @@ def main():
         tickers = []
         if args.type in ("all", "crypto"): tickers += CRYPTO_TICKERS
         if args.type in ("all", "stock"):  tickers += STOCK_TICKERS
+
+    if args.sweep:
+        run_sweep(tickers, args.days)
+        return
 
     print(f"\n{'='*66}")
     print(f"  Strategy backtest  •  {args.days}-day window  •  warmup {WARMUP_DAYS}d")

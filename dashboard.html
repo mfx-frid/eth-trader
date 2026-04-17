@@ -364,12 +364,26 @@ function renderSummary(cLatest,sLatest){
     </div>`;
   }).join("");
 
+  const pending=p.pending_orders||[];
+  const pendingGrouped=pending.reduce((acc,o)=>{(acc[o.product]=acc[o.product]||[]).push(o);return acc;},{});
+  const pendingCards=Object.entries(pendingGrouped).map(([prod,rungs])=>{
+    const totalEur=rungs.reduce((s,o)=>s+o.qty*o.limit_price,0);
+    const rungList=rungs.map(o=>`${o.qty.toFixed(4)}@€${o.limit_price}`).join(" · ");
+    return`<div class="card" style="border-color:#334155">
+      <div class="card-label">${prod.replace("-EUR","")} pending ladder</div>
+      <div class="card-value" style="font-size:14px">${rungs.length} rung${rungs.length>1?"s":""}</div>
+      <div class="card-sub">€${totalEur.toFixed(2)} reserved</div>
+      <div class="card-sub" style="font-size:10px;color:#64748b">${rungList}</div>
+    </div>`;
+  }).join("");
+
   document.getElementById("summary-cards").innerHTML=`
     <div class="card"><div class="card-label">ETH-EUR</div><div class="card-value">€${eth.toFixed(2)}</div><div class="card-sub">Live price</div></div>
     <div class="card"><div class="card-label">BTC-EUR</div><div class="card-value">€${btc.toLocaleString()}</div><div class="card-sub">Live price</div></div>
     <div class="card"><div class="card-label">Crypto EUR free</div><div class="card-value">€${pf(p.eur_balance,2)}</div><div class="card-sub">of €1,000 start</div></div>
     <div class="card"><div class="card-label">Crypto total</div><div class="card-value">€${totalCrypto.toFixed(2)}</div><div class="card-sub ${unrealised>=0?"pos":"neg"}">Unreal €${unrealised>=0?"+":""}${unrealised.toFixed(2)}</div></div>
     ${posCards}
+    ${pendingCards}
     <div class="card"><div class="card-label">Stock portfolio</div><div class="card-value">$${portVal.toLocaleString()}</div><div class="card-sub ${portPnl>=0?"pos":"neg"}">$${portPnl>=0?"+":""}${portPnl.toFixed(2)} P&L</div></div>
     <div class="card"><div class="card-label">Crypto signals</div><div class="card-value">${CRYPTO_DATA.length}</div><div class="card-sub"><span class="pos">${cBuy} BUY</span> · <span class="neu">${cHold} HOLD</span></div></div>
     <div class="card"><div class="card-label">Stock signals</div><div class="card-value">${STOCK_DATA.length}</div><div class="card-sub"><span class="pos">${sBuy} BUY</span> · <span class="neu">${sHold} HOLD</span></div></div>`;
