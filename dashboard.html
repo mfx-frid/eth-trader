@@ -160,6 +160,23 @@ const STOCK_TICKERS =["NVDA","AAPL","TSLA","META","AMD","COIN"];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function rsiColor(v){if(v>=70)return"#f87171";if(v<=30)return"#34d399";if(v>=60)return"#fb923c";if(v<=40)return"#60a5fa";return"#94a3b8"}
+function macdBlurb(r){
+  const h=r.macd_hist;
+  if(h===""||h===undefined||h===null||isNaN(parseFloat(h)))return"<span style='color:#475569'>MACD: —</span>";
+  const hv=parseFloat(h);
+  const m=parseFloat(r.macd||0),s=parseFloat(r.macd_signal||0);
+  const label=hv>0?"bullish":hv<0?"bearish":"flat";
+  const col  =hv>0?"#34d399":hv<0?"#f87171":"#94a3b8";
+  return`MACD: <span style="color:${col}">${m.toFixed(3)} / ${s.toFixed(3)} · hist ${hv>=0?"+":""}${hv.toFixed(3)} (${label})</span>`;
+}
+function vwapBlurb(r){
+  const v=r.vwap_14;
+  if(v===""||v===undefined||v===null||isNaN(parseFloat(v)))return"<span style='color:#475569'>VWAP: —</span>";
+  const vv=parseFloat(v),price=parseFloat(r.price||0);
+  const diff=price-vv,pct=(diff/vv*100);
+  const col =diff>0?"#fb923c":"#60a5fa";
+  return`VWAP-14: <span style="color:${col}">${vv.toFixed(3)} (${diff>=0?"+":""}${pct.toFixed(2)}% vs price)</span>`;
+}
 function rsiTag(v){if(v>=70)return["Overbought","tag-ob"];if(v<=30)return["Oversold","tag-os"];if(v>=60)return["Elevated","tag-el"];if(v<=40)return["Cooling","tag-co"];return["Neutral","tag-ne"]}
 function badge(a){const c={BUY:"b-buy",SELL:"b-sell",HOLD:"b-hold"}[a]||"b-hold";return`<span class="badge ${c}">${a||"?"}</span>`}
 function pf(n,dec){return isNaN(n)?0:parseFloat(n).toFixed(dec)}
@@ -269,6 +286,7 @@ function renderRSI(containerId,tickers,latest){
         <span>vs SMA-14: <span class="${pd<0?"pos":"neg"}">${pd>0?"+":""}${pd}%</span> &nbsp; 7d: <span class="${chg>=0?"pos":"neg"}">${chg>=0?"+":""}${chg.toFixed(1)}%</span></span>
       </div>
       <div class="meter-bar"><div class="meter-fill" style="width:${str}%;background:${scolor}"></div></div>
+      <div class="meter-row">${macdBlurb(r)} &nbsp;·&nbsp; ${vwapBlurb(r)}</div>
     </div>`;
   }).join("");
 }
