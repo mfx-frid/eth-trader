@@ -45,12 +45,13 @@ YAHOO_MAP = {
     "DOGE-EUR": "DOGE-USD",
 }
 
-LOG_FILE       = "coinbase_trade_log.csv"
-STATE_FILE     = "crypto_portfolio.json"
-PAPER_BALANCE  = 1000.0
-MAX_POSITION   = 0.15
-MIN_CONFIDENCE = 7
-COINBASE_BASE  = "https://api.coinbase.com"
+LOG_FILE         = "coinbase_trade_log.csv"
+STATE_FILE       = "crypto_portfolio.json"
+PAPER_BALANCE    = 1000.0
+MAX_POSITION     = 0.15
+MIN_CONFIDENCE   = 7
+COINBASE_BASE    = "https://api.coinbase.com"
+LADDER_STEPS_PCT = [0.0, 2.0, 4.0]   # Simulated limit rungs: market, -2%, -4%
 
 # ── PORTFOLIO PERSISTENCE ─────────────────────────────────────────────────────
 
@@ -63,16 +64,18 @@ def load_portfolio() -> dict:
             # Ensure all keys present
             state.setdefault("eur_balance", PAPER_BALANCE)
             state.setdefault("holdings", {})
+            state.setdefault("pending_orders", [])
             state.setdefault("total_trades", 0)
             state.setdefault("total_pnl", 0.0)
             return state
         except Exception:
             pass
     return {
-        "eur_balance":  PAPER_BALANCE,
-        "holdings":     {},
-        "total_trades": 0,
-        "total_pnl":    0.0,
+        "eur_balance":    PAPER_BALANCE,
+        "holdings":       {},
+        "pending_orders": [],
+        "total_trades":   0,
+        "total_pnl":      0.0,
     }
 
 
@@ -119,7 +122,7 @@ def _cb_get(path: str) -> dict:
 
 # ── MARKET DATA ───────────────────────────────────────────────────────────────
 
-def fetch_coinbase_candles(product_id: str, limit: int = 14) -> list[dict]:
+def fetch_coinbase_candles(product_id: str, limit: int = 50) -> list[dict]:
     end   = int(time.time())
     start = end - 86400 * limit
     path  = (f"/api/v3/brokerage/products/{product_id}/candles"
@@ -128,6 +131,48 @@ def fetch_coinbase_candles(product_id: str, limit: int = 14) -> list[dict]:
     candles = data.get("candles", [])
     candles.sort(key=lambda c: int(c.get("start", 0)))
     return candles
+
+
+def calculate_vwap(closes: list[float], volumes: list[float],
+                   period: int = 14) -> float | None:
+    """Volume-weighted average price over last `period` bars."""
+    if len(closes) < period or len(volumes) < period:
+        return None
+    c  = closes[-period:]
+    v  = volumes[-period:]
+    tv = sum(v)
+    if tv <= 0:
+        return None
+    return round(sum(ci * vi for ci, vi in zip(c, v)) / tv, 4)
+
+
+def calculate_macd(closes: list[float],
+                   fast: int = 12, slow: int = 26,
+                   signal: int = 9) -> dict:
+    """Return latest MACD line, signal, histogram. None if insufficient data."""
+    if len(closes) < slow + signal - 1:
+        return {"macd": None, "signal": None, "hist": None}
+
+    def _ema(values: list[float], period: int) -> list[float]:
+        alpha = 2 / (period + 1)
+        seed  = sum(values[:period]) / period
+        out   = [seed]
+        for v in values[period:]:
+            out.append(v * alpha + out[-1] * (1 - alpha))
+        return out
+
+    ema_fast = _ema(closes, fast)
+    ema_slow = _ema(closes, slow)
+    ema_fast_aligned = ema_fast[slow - fast:]
+    macd_line = [f - s for f, s in zip(ema_fast_aligned, ema_slow)]
+    sig_line  = _ema(macd_line, signal)
+    macd_aligned = macd_line[signal - 1:]
+    hist_line = [m - s for m, s in zip(macd_aligned, sig_line)]
+    return {
+        "macd":   round(macd_aligned[-1], 4),
+        "signal": round(sig_line[-1], 4),
+        "hist":   round(hist_line[-1], 4),
+    }
 
 
 def fetch_coinbase_price(product_id: str) -> dict:
@@ -162,9 +207,15 @@ def build_market_data(product_id: str,
     avg_loss = sum(losses[-14:]) / 14 if losses else 0.001
     rsi      = round(100 - (100 / (1 + avg_gain / avg_loss)), 1)
 
+    macd    = calculate_macd(closes)
+    vwap_14 = calculate_vwap(closes, volumes, 14)
+
     price_now = live["mid"] or closes[-1]
     price_1w  = closes[-7] if len(closes) >= 7 else closes[0]
     change_1w = round(((price_now - price_1w) / price_1w) * 100, 2)
+
+    # Only keep the last 14 price-history points for prompt + dashboard brevity
+    hist_tail = list(zip(dates[-14:], [round(c, 4) for c in closes[-14:]]))
 
     return {
         "product":       product_id,
@@ -175,8 +226,12 @@ def build_market_data(product_id: str,
         "sma_7":         sma7,
         "sma_14":        sma14,
         "rsi_14":        rsi,
+        "macd":          macd["macd"],
+        "macd_signal":   macd["signal"],
+        "macd_hist":     macd["hist"],
+        "vwap_14":       vwap_14,
         "avg_volume_7d": round(sum(volumes[-7:]) / 7, 4),
-        "price_history": list(zip(dates, [round(c, 4) for c in closes])),
+        "price_history": hist_tail,
     }
 
 
@@ -197,6 +252,49 @@ def fetch_news(yahoo_ticker: str, max_items: int = 5) -> list[str]:
 
 # ── PAPER TRADING ─────────────────────────────────────────────────────────────
 
+def fill_pending_orders(portfolio: dict) -> list[dict]:
+    """Fill any pending limit orders whose limit price >= current market.
+    Called once per run, before Claude processes tickers."""
+    filled    = []
+    remaining = []
+    for order in portfolio.get("pending_orders", []):
+        product = order["product"]
+        try:
+            live    = fetch_coinbase_price(product)
+            current = live["mid"] or live["ask"]
+        except Exception:
+            remaining.append(order)
+            continue
+        if current <= 0 or current > order["limit_price"]:
+            remaining.append(order)
+            continue
+
+        cost = round(order["qty"] * order["limit_price"], 2)
+        if portfolio["eur_balance"] < cost:
+            order["dropped_reason"] = "insufficient funds at fill time"
+            filled.append(order)
+            continue
+
+        held    = portfolio["holdings"].get(product, {"qty": 0.0, "avg_buy": 0.0})
+        new_qty = held["qty"] + order["qty"]
+        new_avg = (
+            (held["avg_buy"] * held["qty"]
+             + order["limit_price"] * order["qty"]) / new_qty
+        ) if new_qty > 0 else 0.0
+
+        portfolio["holdings"][product] = {
+            "qty":     round(new_qty, 6),
+            "avg_buy": round(new_avg, 4),
+        }
+        portfolio["eur_balance"] = round(portfolio["eur_balance"] - cost, 2)
+        portfolio["total_trades"] += 1
+        order["filled_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        filled.append(order)
+
+    portfolio["pending_orders"] = remaining
+    return filled
+
+
 def simulate_trade(action: str, confidence: int,
                    product: str, price: float,
                    portfolio: dict) -> dict:
@@ -215,22 +313,53 @@ def simulate_trade(action: str, confidence: int,
         if held.get("qty", 0) > 0:
             trade["note"] = "Already holding — skipped"
             return trade
+        if any(o["product"] == product for o in portfolio.get("pending_orders", [])):
+            trade["note"] = "Ladder pending — skipped"
+            return trade
 
-        max_eur = portfolio["eur_balance"] * MAX_POSITION * (confidence / 10)
-        qty     = round(max_eur / price, 6)
-        cost    = round(qty * price, 2)
+        budget      = portfolio["eur_balance"] * MAX_POSITION * (confidence / 10)
+        tranche_eur = budget / len(LADDER_STEPS_PCT)
 
-        portfolio["eur_balance"] = round(portfolio["eur_balance"] - cost, 2)
-        portfolio["holdings"][product] = {"qty": qty, "avg_buy": price}
+        # Tranche 1: market fill now
+        t1_qty  = round(tranche_eur / price, 6)
+        t1_cost = round(t1_qty * price, 2)
+        portfolio["eur_balance"] = round(portfolio["eur_balance"] - t1_cost, 2)
+        portfolio["holdings"][product] = {"qty": t1_qty, "avg_buy": price}
         portfolio["total_trades"] += 1
-        trade.update({"qty": qty, "eur_value": cost,
-                      "note": "Paper buy executed ✅"})
+
+        notes = [f"T1 mkt {t1_qty}@€{price}"]
+
+        # Tranches 2+: pending limit orders at successive discounts
+        for step in LADDER_STEPS_PCT[1:]:
+            limit_price = round(price * (1 - step / 100), 4)
+            rung_qty    = round(tranche_eur / limit_price, 6)
+            portfolio["pending_orders"].append({
+                "product":     product,
+                "qty":         rung_qty,
+                "limit_price": limit_price,
+                "placed_at":   datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+            })
+            notes.append(f"T-{step:g}% lim {rung_qty}@€{limit_price}")
+
+        trade.update({
+            "qty":       t1_qty,
+            "eur_value": t1_cost,
+            "note":      "Ladder buy ✅  " + " | ".join(notes),
+        })
 
     elif action == "SELL":
         held = portfolio["holdings"].get(product, {})
         if not held or held.get("qty", 0) <= 0:
             trade["note"] = "No position to sell — skipped"
             return trade
+
+        # Cancel any pending ladder rungs for this product
+        before_n = len(portfolio.get("pending_orders", []))
+        portfolio["pending_orders"] = [
+            o for o in portfolio.get("pending_orders", [])
+            if o["product"] != product
+        ]
+        cancelled = before_n - len(portfolio["pending_orders"])
 
         qty      = held["qty"]
         proceeds = round(qty * price, 2)
@@ -241,8 +370,10 @@ def simulate_trade(action: str, confidence: int,
         portfolio["total_trades"] += 1
         portfolio["total_pnl"]    = round(portfolio["total_pnl"] + pnl, 2)
 
-        trade.update({"qty": qty, "eur_value": proceeds, "pnl": pnl,
-                      "note": f"Paper sell executed ✅  P&L: €{pnl:+.2f}"})
+        note = f"Paper sell ✅  P&L: €{pnl:+.2f}"
+        if cancelled:
+            note += f"  (cancelled {cancelled} pending rung{'s' if cancelled > 1 else ''})"
+        trade.update({"qty": qty, "eur_value": proceeds, "pnl": pnl, "note": note})
     else:
         trade["note"] = "Holding — no trade"
 
@@ -280,6 +411,8 @@ Analyse the following data and provide a trading recommendation.
 - SMA-7:        €{market['sma_7']}
 - SMA-14:       €{market['sma_14']}
 - RSI-14:       {market['rsi_14']} (oversold <30, overbought >70)
+- MACD-12/26:   {market['macd']}  signal: {market['macd_signal']}  hist: {market['macd_hist']} (hist>0 bullish momentum, hist<0 bearish; sign flip = crossover)
+- VWAP-14:      €{market['vwap_14']} (price above VWAP = paying premium, below = discount)
 - Avg vol/day:  {market['avg_volume_7d']}
 
 ### Current position
@@ -337,6 +470,7 @@ def log_to_csv(market: dict, rec: dict,
         "price_target", "stop_loss", "reasoning",
         "trade_qty", "trade_eur", "trade_pnl", "trade_note",
         "paper_eur_balance", "paper_total_trades", "paper_total_pnl",
+        "macd", "macd_signal", "macd_hist", "vwap_14",
     ]
     row = {
         "timestamp":          datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -361,6 +495,10 @@ def log_to_csv(market: dict, rec: dict,
         "paper_eur_balance":  round(portfolio["eur_balance"], 2),
         "paper_total_trades": portfolio["total_trades"],
         "paper_total_pnl":    portfolio["total_pnl"],
+        "macd":               market["macd"]        if market["macd"]        is not None else "",
+        "macd_signal":        market["macd_signal"] if market["macd_signal"] is not None else "",
+        "macd_hist":          market["macd_hist"]   if market["macd_hist"]   is not None else "",
+        "vwap_14":            market["vwap_14"]     if market["vwap_14"]     is not None else "",
     }
     with open(LOG_FILE, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -376,7 +514,8 @@ def print_ticker_report(market: dict, rec: dict, trade: dict) -> None:
     icon   = {"BUY": "🟢", "SELL": "🔴", "HOLD": "🟡"}.get(action, "⚪")
     print(f"\n  {'─'*58}")
     print(f"  {market['product']}  •  €{market['current_price']}  "
-          f"({market['change_7d_pct']:+.1f}% / 7d)  |  RSI: {market['rsi_14']}")
+          f"({market['change_7d_pct']:+.1f}% / 7d)  |  RSI: {market['rsi_14']}  "
+          f"|  MACD hist: {market['macd_hist']}")
     print(f"  {icon}  {action}  ({rec['confidence']}/10)"
           f"  —  {rec.get('time_horizon', '')}")
     print(f"  {rec.get('reasoning', '')}")
@@ -411,6 +550,12 @@ def print_portfolio_summary(portfolio: dict,
     if unrealised:
         print(f"  Unrealised P&L: €{unrealised:+.2f}")
 
+    pending = p.get("pending_orders", [])
+    if pending:
+        print(f"  Pending ladder rungs: {len(pending)}")
+        for o in pending:
+            print(f"    ⏳  {o['product']}  {o['qty']}@€{o['limit_price']}  (placed {o.get('placed_at','')})")
+
     total_value = round(p["eur_balance"] + unrealised, 2)
     print(f"  Total value:   €{total_value}")
     print(f"  {'═'*58}")
@@ -433,10 +578,20 @@ def main():
     portfolio     = load_portfolio()
     market_prices = {}
 
+    # Sweep pending ladder rungs first — fill any whose limit is now reached
+    filled = fill_pending_orders(portfolio)
+    if filled:
+        print(f"\n  ⚙  Pending ladder sweep: {len(filled)} rung(s) processed")
+        for o in filled:
+            if "dropped_reason" in o:
+                print(f"    ✗  {o['product']} @€{o['limit_price']} dropped ({o['dropped_reason']})")
+            else:
+                print(f"    ✓  {o['product']} filled {o['qty']}@€{o['limit_price']}")
+
     for product_id in TICKERS:
         print(f"\n  Fetching {product_id}...")
         try:
-            candles   = fetch_coinbase_candles(product_id, limit=14)
+            candles   = fetch_coinbase_candles(product_id, limit=50)
             live      = fetch_coinbase_price(product_id)
             market    = build_market_data(product_id, candles, live)
             headlines = fetch_news(YAHOO_MAP.get(product_id, product_id))
