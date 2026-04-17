@@ -1,5 +1,5 @@
 {
-  "eur_balance": 734.54,
+  "eur_balance": 684.03,
   "holdings": {
     "SOL-EUR": {
       "qty": 1.156473,
@@ -10,10 +10,40 @@
       "avg_buy": 0.0791
     },
     "XRP-EUR": {
-      "qty": 0.0,
-      "avg_buy": 0.0
+      "qty": 19.685313,
+      "avg_buy": 1.2603
+    },
+    "BTC-EUR": {
+      "qty": 0.00039,
+      "avg_buy": 65900.205
     }
   },
-  "total_trades": 7,
-  "total_pnl": 8.66
+  "total_trades": 9,
+  "total_pnl": 8.66,
+  "pending_orders": [
+    {
+      "product": "BTC-EUR",
+      "qty": 0.000398,
+      "limit_price": 64582.2009,
+      "placed_at": "2026-04-17 22:06"
+    },
+    {
+      "product": "BTC-EUR",
+      "qty": 0.000406,
+      "limit_price": 63264.1968,
+      "placed_at": "2026-04-17 22:06"
+    },
+    {
+      "product": "XRP-EUR",
+      "qty": 20.086957,
+      "limit_price": 1.2351,
+      "placed_at": "2026-04-17 22:06"
+    },
+    {
+      "product": "XRP-EUR",
+      "qty": 20.505331,
+      "limit_price": 1.2099,
+      "placed_at": "2026-04-17 22:06"
+    }
+  ]
 }
