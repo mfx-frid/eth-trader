@@ -1,0 +1,39 @@
+name: Test Paper Buy (one-off)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ticker:
+        description: 'Ticker symbol to buy'
+        required: false
+        default: 'TSLA'
+      qty:
+        description: 'Number of shares'
+        required: false
+        default: '1'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  place_buy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Place paper buy
+        env:
+          ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+          TEST_TICKER:       ${{ github.event.inputs.ticker }}
+          TEST_QTY:          ${{ github.event.inputs.qty }}
+        run: python test_paper_buy.py
