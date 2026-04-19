@@ -1,5 +1,5 @@
 {
-  "eur_balance": 540.33,
+  "eur_balance": 516.39,
   "holdings": {
     "SOL-EUR": {
       "qty": 1.156473,
@@ -18,15 +18,15 @@
       "avg_buy": 65234.5126
     },
     "ETH-EUR": {
-      "qty": 0.023611,
-      "avg_buy": 2027.9561
+      "qty": 0.035784,
+      "avg_buy": 2007.1194
     },
     "LTC-EUR": {
       "qty": 0.43157,
       "avg_buy": 47.495
     }
   },
-  "total_trades": 15,
+  "total_trades": 16,
   "total_pnl": 8.66,
   "pending_orders": [
     {
@@ -34,12 +34,6 @@
       "qty": 0.000406,
       "limit_price": 63264.1968,
       "placed_at": "2026-04-17 22:06"
-    },
-    {
-      "product": "ETH-EUR",
-      "qty": 0.012173,
-      "limit_price": 1966.704,
-      "placed_at": "2026-04-18 05:53"
     },
     {
       "product": "LTC-EUR",
